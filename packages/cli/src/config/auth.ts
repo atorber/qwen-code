@@ -52,6 +52,14 @@ export const validateAuthMethod = (authMethod: string): string | null => {
     return null;
   }
 
+  // 新增百度云认证验证逻辑
+  if (authMethod === AuthType.BAIDU_CLOUD) {
+    if (!process.env['BAIDU_CLOUD_AK'] || !process.env['BAIDU_CLOUD_SK']) {
+      return 'BAIDU_CLOUD_AK and BAIDU_CLOUD_SK environment variables are required for Baidu Cloud authentication.';
+    }
+    return null;
+  }
+
   return 'Invalid auth method selected.';
 };
 

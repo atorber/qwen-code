@@ -114,6 +114,7 @@ import { setUpdateHandler } from '../utils/handleAutoUpdate.js';
 import { appEvents, AppEvent } from '../utils/events.js';
 import { isNarrowWidth } from './utils/isNarrowWidth.js';
 import { WelcomeBackDialog } from './components/WelcomeBackDialog.js';
+import { BaiduModelSelectionDialog } from './components/BaiduModelSelectionDialog.js';
 
 // Maximum number of queued messages to display in UI to prevent performance issues
 const MAX_DISPLAYED_QUEUED_MESSAGES = 3;
@@ -221,6 +222,15 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
   >();
   const [showEscapePrompt, setShowEscapePrompt] = useState(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  // 添加百度云模型选择相关的状态变量
+  const [isBaiduModelSelectionOpen, setIsBaiduModelSelectionOpen] = useState(false);
+
+  // 添加处理百度云模型选择的函数
+  const handleBaiduModelSelect = useCallback(() => {
+    // 关闭模型选择对话框
+    setIsBaiduModelSelectionOpen(false);
+    // 这里可以添加其他处理逻辑
+  }, []);
 
   useEffect(() => {
     const unsubscribe = ideContext.subscribeToIdeContext(setIdeContextState);
@@ -1244,6 +1254,14 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
                 onSelect={handleAuthSelect}
                 settings={settings}
                 initialErrorMessage={authError}
+              />
+            </Box>
+          ) : isBaiduModelSelectionOpen ? (
+            <Box flexDirection="column">
+              <BaiduModelSelectionDialog
+                config={config}
+                onModelSelected={handleBaiduModelSelect}
+                onCancel={() => setIsBaiduModelSelectionOpen(false)}
               />
             </Box>
           ) : isEditorDialogOpen ? (

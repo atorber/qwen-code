@@ -110,3 +110,11 @@ export { sessionId } from './utils/session.js';
 export * from './utils/browser.js';
 // OpenAI Logging Utilities
 export { OpenAILogger, openaiLogger } from './utils/openaiLogger.js';
+
+// Export Baidu Cloud SDK
+export { bceSdk, BceConfig } from './bce-sdk/index.js';
+export { 
+  BaiduCloudContentGenerator, 
+  createBaiduCloudContentGenerator,
+  validateBaiduCloudAuth 
+} from './bce-sdk/baiduCloudContentGenerator.js';
