@@ -31,6 +31,7 @@ import { ApiErrorEvent, ApiResponseEvent } from '../telemetry/types.js';
 import { Config } from '../config/config.js';
 import { openaiLogger } from '../utils/openaiLogger.js';
 import { safeJsonParse } from '../utils/safeJsonParse.js';
+import { console } from 'node:inspector';
 
 // Extended types to support cache_control
 interface ChatCompletionContentPartTextWithCache
@@ -399,6 +400,8 @@ export class OpenAIContentGenerator implements ContentGenerator {
       userPromptId,
       true,
     );
+
+    console.log('OpenAI API Request:', createParams);
 
     try {
       const stream = (await this.client.chat.completions.create(

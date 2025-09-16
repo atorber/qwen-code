@@ -152,6 +152,11 @@ export class GeminiClient {
     return this.contentGenerator;
   }
 
+  // 添加设置内容生成器的方法，用于百度云认证等特殊场景
+  setContentGenerator(contentGenerator: ContentGenerator): void {
+    this.contentGenerator = contentGenerator;
+  }
+
   getUserTier(): UserTierId | undefined {
     return this.contentGenerator?.userTier;
   }

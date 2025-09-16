@@ -48,6 +48,11 @@ async function main() {
       esbuildProblemMatcherPlugin,
     ],
     loader: { '.node': 'file' },
+    // 解决 @atorber/baiducloud-sdk 的 package.json 解析问题
+    resolveExtensions: ['.ts', '.js', '.json'],
+    mainFields: ['main', 'module'],
+    // 将百度云 SDK 标记为外部依赖，避免打包问题
+    external: ['vscode', '@atorber/baiducloud-sdk'],
   });
   if (watch) {
     await ctx.watch();

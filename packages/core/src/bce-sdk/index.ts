@@ -12,30 +12,16 @@ export interface BceConfig {
 
 export async function bceSdk(query: any, req: any, config: Config) {
   try {
-    
-      // 从配置文件中获取百度云配置
-      const baiduCloudConfig = config.getBaiduCloudConfig();
-      const bceConfig: BceConfig = {
-        endpoint: baiduCloudConfig.endpoint,
-        credentials: {
-          ak: baiduCloudConfig.accessKey,
-          sk: baiduCloudConfig.secretKey,
-        },
-      };
-    
-    // 打印配置信息用于调试
-    console.log('Baidu Cloud Config:', {
-      endpoint: bceConfig.endpoint,
-      ak: bceConfig.credentials.ak ? `${bceConfig.credentials.ak.substring(0, 8)}...` : 'undefined',
-      sk: bceConfig.credentials.sk ? `${bceConfig.credentials.sk.substring(0, 8)}...` : 'undefined'
-    });
-    
-    console.log('Request details:', {
-      query,
-      method: req.method,
-      body: req.body
-    });
-    
+    // 从配置文件中获取百度云配置
+    const baiduCloudConfig = config.getBaiduCloudConfig();
+    const bceConfig: BceConfig = {
+      endpoint: baiduCloudConfig.endpoint,
+      credentials: {
+        ak: baiduCloudConfig.accessKey,
+        sk: baiduCloudConfig.secretKey,
+      },
+    };
+
     const client = new BceBaseClient(bceConfig as any, 'aihc');
 
     const params = query;
@@ -87,23 +73,19 @@ export async function bceSdk(query: any, req: any, config: Config) {
     }
 
     if (req.method === 'POST') {
-      console.log('Sending POST request with headers:', headers);
       const response = await client.sendRequest(req.method, '/', {
         params,
         config: {},
         headers,
         body: JSON.stringify(req.body) || null,
       });
-      console.log('POST response received:', response);
       return response;
     } else {
-      console.log('Sending GET request with headers:', headers);
       const response = await client.sendRequest(req.method, '/', {
         params,
         config: {},
         headers,
       });
-      console.log('GET response received:', response);
       return response;
     }
   } catch (error) {
@@ -114,8 +96,34 @@ export async function bceSdk(query: any, req: any, config: Config) {
       errorCode: (error as any)?.code,
       errorStatus: (error as any)?.status,
       errorResponse: (error as any)?.response,
-      fullError: error
+      fullError: error,
     });
     return error;
   }
+}
+
+export async function describeServices(config: Config) {
+  return bceSdk(
+    {
+      action: 'DescribeServices',
+      pageSize:100
+    },
+    {
+      method: 'GET',
+    },
+    config,
+  );
+}
+
+export async function describeService(serviceId: string, config: Config) {
+  return bceSdk(
+    {
+      action: 'DescribeService',
+      serviceId,
+    },
+    {
+      method: 'GET',
+    },
+    config,
+  );
 }

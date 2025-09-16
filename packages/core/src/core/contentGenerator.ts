@@ -49,6 +49,7 @@ export enum AuthType {
   CLOUD_SHELL = 'cloud-shell',
   USE_OPENAI = 'openai',
   QWEN_OAUTH = 'qwen-oauth',
+  BAIDU_CLOUD = 'baidu-cloud',
 }
 
 export type ContentGeneratorConfig = {
@@ -90,6 +91,10 @@ export function createContentGeneratorConfig(
   const openaiApiKey = process.env['OPENAI_API_KEY'] || undefined;
   const openaiBaseUrl = process.env['OPENAI_BASE_URL'] || undefined;
   const openaiModel = process.env['OPENAI_MODEL'] || undefined;
+
+  // baidu cloud auth
+  const baiduCloudAk = process.env['BAIDU_CLOUD_AK'] || undefined;
+  const baiduCloudSk = process.env['BAIDU_CLOUD_SK'] || undefined;
 
   // Use runtime model from config if available; otherwise, fall back to parameter or default
   const effectiveModel = config.getModel() || DEFAULT_GEMINI_MODEL;
@@ -150,6 +155,41 @@ export function createContentGeneratorConfig(
     return contentGeneratorConfig;
   }
 
+  // 添加百度云认证支持
+  if (authType === AuthType.BAIDU_CLOUD && baiduCloudAk && baiduCloudSk) {
+    // 对于百度云认证，我们将使用AK作为apiKey，SK存储在环境变量中
+    contentGeneratorConfig.apiKey = baiduCloudAk;
+    contentGeneratorConfig.baseUrl = process.env['BAIDU_MODEL_ENDPOINT'] || 'https://aihc.bj.baidubce.com';
+    
+    // 优先使用从服务列表中选中的模型配置
+    const baiduCloudApiKey = process.env['BAIDU_CLOUD_API_KEY'];
+    const baiduCloudBaseUrl = process.env['BAIDU_CLOUD_BASE_URL'];
+    const baiduCloudModel = process.env['BAIDU_CLOUD_SERVICE_MODEL'];
+    
+    // 添加调试日志
+    console.log('🔍 百度云配置检查:', {
+      baiduCloudApiKey: baiduCloudApiKey ? '已设置' : '未设置',
+      baiduCloudBaseUrl: baiduCloudBaseUrl ? '已设置' : '未设置',
+      baiduCloudModel: baiduCloudModel ? '已设置' : '未设置',
+      baiduCloudAk: baiduCloudAk ? '已设置' : '未设置',
+      baiduCloudSk: baiduCloudSk ? '已设置' : '未设置'
+    });
+    
+    if (baiduCloudApiKey && baiduCloudBaseUrl && baiduCloudModel) {
+      // 使用从服务列表中获取的配置信息
+      contentGeneratorConfig.apiKey = baiduCloudApiKey;
+      contentGeneratorConfig.baseUrl = baiduCloudBaseUrl;
+      contentGeneratorConfig.model = baiduCloudModel;
+    } else {
+      // 回退到原有的配置方式
+      // 使用选中的百度云模型或默认模型
+      const selectedBaiduModel = config.getSelectedBaiduModel();
+      contentGeneratorConfig.model = selectedBaiduModel || DEFAULT_QWEN_MODEL;
+    }
+
+    return contentGeneratorConfig;
+  }
+
   return contentGeneratorConfig;
 }
 
@@ -178,6 +218,29 @@ export async function createContentGenerator(
       ),
       gcConfig,
     );
+  }
+
+  // 百度云认证方式：获取认证信息后使用OpenAI内容生成器
+  if (config.authType === AuthType.BAIDU_CLOUD) {
+    // 确保必要的认证信息存在
+    if (!config.apiKey) {
+      throw new Error('Baidu Cloud API key is required');
+    }
+
+    // 使用OpenAI内容生成器处理百度云认证
+    try {
+      // Import OpenAIContentGenerator dynamically to avoid circular dependencies
+      const { createOpenAIContentGenerator } = await import(
+        './openaiContentGenerator/index.js'
+      );
+
+      // Always use OpenAIContentGenerator, logging is controlled by enableOpenAILogging flag
+      return createOpenAIContentGenerator(config, gcConfig);
+    } catch (error) {
+      throw new Error(
+        `Failed to initialize OpenAI Content Generator for Baidu Cloud: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
   }
 
   if (

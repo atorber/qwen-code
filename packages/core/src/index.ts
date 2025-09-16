@@ -114,7 +114,9 @@ export { OpenAILogger, openaiLogger } from './utils/openaiLogger.js';
 // Export Baidu Cloud SDK
 export { bceSdk, BceConfig } from './bce-sdk/index.js';
 export { 
-  BaiduCloudContentGenerator, 
-  createBaiduCloudContentGenerator,
-  validateBaiduCloudAuth 
-} from './bce-sdk/baiduCloudContentGenerator.js';
+  getBaiduCloudAuthCacheManager, 
+  clearBaiduCloudAuthCache, 
+  BaiduCloudCredentials,
+  ServiceListResponse,
+  validateBaiduCloudAuth
+} from './bce-sdk/baiduCloudAuthCache.js';
