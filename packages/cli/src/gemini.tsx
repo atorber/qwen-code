@@ -233,6 +233,17 @@ export async function main() {
           if (err) {
             throw new Error(err);
           }
+          
+          // 如果使用百度云认证，获取模型列表并设置默认模型
+          if (settings.merged.selectedAuthType === AuthType.BAIDU_CLOUD) {
+            try {
+              // 百度云认证现在使用OpenAI内容生成器，不需要特殊的模型处理
+              console.log('Using Baidu Cloud authentication with OpenAI content generator');
+            } catch (modelError) {
+              console.error('Failed to handle Baidu Cloud models:', modelError);
+            }
+          }
+          
           await config.refreshAuth(settings.merged.selectedAuthType);
         } catch (err) {
           console.error('Error authenticating:', err);
