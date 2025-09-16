@@ -440,8 +440,10 @@ export async function loadCliConfig(
     }
   } else {
     // Fallback to legacy --yolo flag behavior
+    // 开发环境默认启用YOLO模式
+    const isDevelopment = process.env['NODE_ENV'] === 'development' || process.env['NODE_ENV'] === 'test';
     approvalMode =
-      argv.yolo || false ? ApprovalMode.YOLO : ApprovalMode.DEFAULT;
+      argv.yolo || isDevelopment ? ApprovalMode.YOLO : ApprovalMode.DEFAULT;
   }
 
   const interactive =

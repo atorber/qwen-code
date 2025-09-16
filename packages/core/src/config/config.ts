@@ -10,7 +10,9 @@ import {
   AuthType,
   ContentGeneratorConfig,
   createContentGeneratorConfig,
+  createContentGenerator,
 } from '../core/contentGenerator.js';
+import { GeminiChat } from '../core/geminiChat.js';
 import { PromptRegistry } from '../prompts/prompt-registry.js';
 import { ToolRegistry } from '../tools/tool-registry.js';
 import { LSTool } from '../tools/ls.js';
@@ -447,24 +449,42 @@ export class Config {
 
     // Create and initialize new client in local variable first
     const newGeminiClient = new GeminiClient(this);
-    await newGeminiClient.initialize(newContentGeneratorConfig);
+    
+    // For Baidu Cloud auth, we need to use OpenAI content generator instead of the default initialization
+    if (authMethod === AuthType.BAIDU_CLOUD) {
+      // Create content generator using OpenAI content generator
+      const contentGenerator = await createContentGenerator(
+        newContentGeneratorConfig,
+        this,
+        this.getSessionId(),
+      );
+      
+      // Set the content generator directly
+      newGeminiClient.setContentGenerator(contentGenerator);
+      // Initialize the chat
+      const chat = await newGeminiClient.startChat();
+      // Use reflection to set the private chat property
+      (newGeminiClient as unknown as { chat?: GeminiChat }).chat = chat;
+    } else {
+      await newGeminiClient.initialize(newContentGeneratorConfig);
 
-    // Vertex and Genai have incompatible encryption and sending history with
-    // throughtSignature from Genai to Vertex will fail, we need to strip them
-    const fromGenaiToVertex =
-      this.contentGeneratorConfig?.authType === AuthType.USE_GEMINI &&
-      authMethod === AuthType.LOGIN_WITH_GOOGLE;
+      // Vertex and Genai have incompatible encryption and sending history with
+      // throughtSignature from Genai to Vertex will fail, we need to strip them
+      const fromGenaiToVertex =
+        this.contentGeneratorConfig?.authType === AuthType.USE_GEMINI &&
+        authMethod === AuthType.LOGIN_WITH_GOOGLE;
+
+      // Restore the conversation history to the new client
+      if (existingHistory.length > 0) {
+        newGeminiClient.setHistory(existingHistory, {
+          stripThoughts: fromGenaiToVertex,
+        });
+      }
+    }
 
     // Only assign to instance properties after successful initialization
     this.contentGeneratorConfig = newContentGeneratorConfig;
     this.geminiClient = newGeminiClient;
-
-    // Restore the conversation history to the new client
-    if (existingHistory.length > 0) {
-      this.geminiClient.setHistory(existingHistory, {
-        stripThoughts: fromGenaiToVertex,
-      });
-    }
 
     // Reset the session flag since we're explicitly changing auth and using default model
     this.inFallbackMode = false;
@@ -871,6 +891,149 @@ export class Config {
 
   getSubagentManager(): SubagentManager {
     return this.subagentManager;
+  }
+
+  /**
+   * 获取百度云内容生成器
+   */
+  async getBaiduCloudContentGenerator(): Promise<null> {
+    return null;
+  }
+
+  /**
+   * 设置选中的百度云模型
+   */
+  setSelectedBaiduModel(_modelId: string): void {
+    // 已移除百度云内容生成器，此方法不再需要
+  }
+
+  /**
+   * 获取选中的百度云模型
+   */
+  getSelectedBaiduModel(): null {
+    return null;
+  }
+
+  /**
+   * 获取百度云配置
+   */
+  getBaiduCloudConfig(): {
+    accessKey: string;
+    secretKey: string;
+    endpoint: string;
+    region?: string;
+    serviceId?: string;
+    serviceName?: string;
+    modelName?: string;
+    isAuthenticated?: boolean;
+    lastLoginTime?: number;
+  } {
+    // 优先从环境变量获取
+    const accessKey = process.env['BAIDU_CLOUD_AK'] || process.env['BCE_AK'] || '';
+    const secretKey = process.env['BAIDU_CLOUD_SK'] || process.env['BCE_SK'] || '';
+    const region = process.env['BCE_REGION'] || 'bj';
+    
+    // 支持多种 ENDPOINT 环境变量名称
+    const endpoint = process.env['BAIDU_CLOUD_ENDPOINT'] || 
+                    process.env['BAIDU_MODEL_ENDPOINT'] || 
+                    process.env['BCE_ENDPOINT'] || 
+                    `https://aihc.${region}.baidubce.com`;
+
+    // 获取选中的服务信息
+    const serviceId = process.env['BAIDU_CLOUD_SERVICE_ID'] || '';
+    const serviceName = process.env['BAIDU_CLOUD_SERVICE_NAME'] || '';
+    const modelName = process.env['BAIDU_CLOUD_MODEL_NAME'] || '';
+
+    // 获取认证状态
+    const isAuthenticated = process.env['BAIDU_CLOUD_AUTHENTICATED'] === 'true';
+    const lastLoginTime = process.env['BAIDU_CLOUD_LAST_LOGIN'] ? 
+                         parseInt(process.env['BAIDU_CLOUD_LAST_LOGIN'], 10) : undefined;
+
+    return {
+      accessKey,
+      secretKey,
+      endpoint,
+      region,
+      serviceId,
+      serviceName,
+      modelName,
+      isAuthenticated,
+      lastLoginTime,
+    };
+  }
+
+  /**
+   * 设置百度云认证状态
+   */
+  setBaiduCloudAuthStatus(authenticated: boolean, serviceInfo?: {
+    serviceId: string;
+    serviceName: string;
+    modelName: string;
+    // 新增服务配置信息
+    serviceConfig?: {
+      apiKey: string;
+      baseUrl: string;
+      model: string;
+    };
+  }): void {
+    process.env['BAIDU_CLOUD_AUTHENTICATED'] = authenticated ? 'true' : 'false';
+    
+    if (authenticated) {
+      process.env['BAIDU_CLOUD_LAST_LOGIN'] = Date.now().toString();
+      
+      if (serviceInfo) {
+        process.env['BAIDU_CLOUD_SERVICE_ID'] = serviceInfo.serviceId;
+        process.env['BAIDU_CLOUD_SERVICE_NAME'] = serviceInfo.serviceName;
+        process.env['BAIDU_CLOUD_MODEL_NAME'] = serviceInfo.modelName;
+        
+        // 存储服务配置信息
+        if (serviceInfo.serviceConfig) {
+          process.env['BAIDU_CLOUD_API_KEY'] = serviceInfo.serviceConfig.apiKey;
+          process.env['BAIDU_CLOUD_BASE_URL'] = serviceInfo.serviceConfig.baseUrl;
+          process.env['BAIDU_CLOUD_SERVICE_MODEL'] = serviceInfo.serviceConfig.model;
+        }
+      }
+    } else {
+      // 注销时清除认证信息
+      delete process.env['BAIDU_CLOUD_AUTHENTICATED'];
+      delete process.env['BAIDU_CLOUD_LAST_LOGIN'];
+      delete process.env['BAIDU_CLOUD_SERVICE_ID'];
+      delete process.env['BAIDU_CLOUD_SERVICE_NAME'];
+      delete process.env['BAIDU_CLOUD_MODEL_NAME'];
+      delete process.env['BAIDU_CLOUD_API_KEY'];
+      delete process.env['BAIDU_CLOUD_BASE_URL'];
+      delete process.env['BAIDU_CLOUD_SERVICE_MODEL'];
+    }
+  }
+
+  /**
+   * 检查百度云认证是否有效
+   */
+  isBaiduCloudAuthenticated(): boolean {
+    const config = this.getBaiduCloudConfig();
+    
+    // 检查是否有认证状态
+    if (!config.isAuthenticated) {
+      return false;
+    }
+    
+    // 检查是否有必要的认证信息
+    if (!config.accessKey || !config.secretKey || !config.endpoint) {
+      return false;
+    }
+    
+    // 检查登录时间是否在有效期内（24小时）
+    if (config.lastLoginTime) {
+      const now = Date.now();
+      const twentyFourHours = 24 * 60 * 60 * 1000; // 24小时
+      if (now - config.lastLoginTime > twentyFourHours) {
+        console.log('🔧 百度云认证已过期，需要重新登录');
+        this.setBaiduCloudAuthStatus(false);
+        return false;
+      }
+    }
+    
+    return true;
   }
 
   async createToolRegistry(): Promise<ToolRegistry> {
