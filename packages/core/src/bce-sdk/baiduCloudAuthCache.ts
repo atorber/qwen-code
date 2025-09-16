@@ -456,9 +456,9 @@ export async function validateBaiduCloudAuth(
             baseUrl = `http://${serviceInfo.status.accessIPs.internal}/auth/${service.id}/${serviceInfo.status.accessPorts.filter((item: any) => item.name === 'HTTP')[0].servicePort}`;
           }
           service.config = {
-            apiKey:'',
+            apiKey: '', // 初始为空，用户将在选择服务时输入
             baseUrl,
-            model: service.name,
+            model: '', // 使用服务名称作为默认model
           };
         } catch (error) {
           service.status = 0;

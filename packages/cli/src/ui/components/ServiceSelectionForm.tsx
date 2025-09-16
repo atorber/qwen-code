@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
+import { ApiKeyInputForm } from './ApiKeyInputForm.js';
+import { ModelInputForm } from './ModelInputForm.js'; // 添加导入
 
 interface InferenceService {
   id: string;                    // 服务ID
@@ -44,13 +46,15 @@ export function ServiceSelectionForm({
   loading = false,
   error = null
 }: ServiceSelectionFormProps) {
-
   // 过滤掉非运行状态
   services = services.filter(service => service.status === 2);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+  const [showModelInput, setShowModelInput] = useState(false); // 添加状态
+  const [selectedService, setSelectedService] = useState<InferenceService | null>(null);
 
   useInput((input, key) => {
-    if (loading) return;
+    if (loading || showApiKeyInput || showModelInput) return; // 添加showModelInput条件
 
     if (key.upArrow) {
       setSelectedIndex(prev => Math.max(0, prev - 1));
@@ -58,12 +62,105 @@ export function ServiceSelectionForm({
       setSelectedIndex(prev => Math.min(services.length - 1, prev + 1));
     } else if (key.return) {
       if (services[selectedIndex]) {
-        onSelect(services[selectedIndex]);
+        const service = services[selectedIndex];
+        // 检查服务的apiKey是否为空
+        if (!service.config?.apiKey) {
+          // 如果apiKey为空，显示输入框
+          setSelectedService(service);
+          setShowApiKeyInput(true);
+        } 
+        // 检查服务的model是否为空
+        else if (!service.config?.model) {
+          // 如果model为空，显示输入框
+          setSelectedService(service);
+          setShowModelInput(true);
+        } else {
+          // 如果apiKey和model都不为空，直接选择服务
+          onSelect(service);
+        }
       }
     } else if (key.escape || (key.ctrl && input === 'c')) {
       onCancel();
     }
   });
+
+  // 处理apiKey提交
+  const handleApiKeySubmit = (apiKey: string) => {
+    if (selectedService) {
+      // 更新服务的apiKey
+      const updatedService = {
+        ...selectedService,
+        config: {
+          ...selectedService.config,
+          apiKey
+        }
+      };
+      
+      // 检查model是否也为空
+      if (!updatedService.config.model) {
+        // 如果model也为空，显示model输入框
+        setSelectedService(updatedService);
+        setShowApiKeyInput(false);
+        setShowModelInput(true);
+      } else {
+        // 如果model不为空，选择服务
+        onSelect(updatedService);
+        setShowApiKeyInput(false);
+        setSelectedService(null);
+      }
+    }
+  };
+
+  // 处理model提交
+  const handleModelSubmit = (model: string) => {
+    if (selectedService) {
+      // 更新服务的model
+      const updatedService = {
+        ...selectedService,
+        config: {
+          ...selectedService.config,
+          model
+        }
+      };
+      onSelect(updatedService);
+    }
+    setShowModelInput(false);
+    setSelectedService(null);
+  };
+
+  // 处理apiKey输入取消
+  const handleApiKeyCancel = () => {
+    setShowApiKeyInput(false);
+    setSelectedService(null);
+  };
+
+  // 处理model输入取消
+  const handleModelCancel = () => {
+    setShowModelInput(false);
+    setSelectedService(null);
+  };
+
+  // 如果显示apiKey输入表单，渲染该表单
+  if (showApiKeyInput && selectedService) {
+    return (
+      <ApiKeyInputForm
+        serviceName={selectedService.name}
+        onSubmit={handleApiKeySubmit}
+        onCancel={handleApiKeyCancel}
+      />
+    );
+  }
+
+  // 如果显示model输入表单，渲染该表单
+  if (showModelInput && selectedService) {
+    return (
+      <ModelInputForm
+        serviceName={selectedService.name}
+        onSubmit={handleModelSubmit}
+        onCancel={handleModelCancel}
+      />
+    );
+  }
 
   if (loading) {
     return (

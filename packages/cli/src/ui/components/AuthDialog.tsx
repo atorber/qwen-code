@@ -316,9 +316,10 @@ export function AuthDialog({
         throw new Error('Service configuration is missing');
       }
       
-      if (!serviceObj.config.apiKey) {
-        throw new Error('Service API key is missing');
-      }
+      // 不再检查apiKey是否为空，因为用户可能输入'aihc-no-auth'
+      // if (!serviceObj.config.apiKey) {
+      //   throw new Error('Service API key is missing');
+      // }
       
       if (!serviceObj.config.baseUrl) {
         throw new Error('Service base URL is missing');
