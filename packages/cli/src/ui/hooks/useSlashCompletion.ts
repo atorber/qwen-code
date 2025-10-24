@@ -104,9 +104,14 @@ export function useSlashCompletion(props: UseSlashCompletionProps): {
     }
 
     const depth = commandPathParts.length;
+    
+    // Check if partial looks like a parameter flag that expects enum values
+    const isParameterFlag = partial && (partial.startsWith('--') || partial.startsWith('-'));
+    
     const isArgumentCompletion =
       leafCommand?.completion &&
       (hasTrailingSpace ||
+        isParameterFlag ||
         (rawParts.length > depth && depth > 0 && partial !== ''));
 
     if (hasTrailingSpace || exactMatchAsParent) {
@@ -117,7 +122,14 @@ export function useSlashCompletion(props: UseSlashCompletionProps): {
         const commandSoFar = `/${commandPathParts.join(' ')}`;
         const argStartIndex =
           commandSoFar.length + (commandPathParts.length > 0 ? 1 : 0);
-        setCompletionStart(argStartIndex);
+        
+        // If partial is a parameter flag (e.g., "-t", "--order"), 
+        // insert after the flag instead of replacing it
+        if (isParameterFlag) {
+          setCompletionStart(query.length); // Insert after the flag
+        } else {
+          setCompletionStart(argStartIndex);
+        }
       } else {
         setCompletionStart(query.length - partial.length);
       }

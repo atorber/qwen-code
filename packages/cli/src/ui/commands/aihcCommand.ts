@@ -591,11 +591,16 @@ const devListCommand: SlashCommand = {
   },
   completion: async (_context: CommandContext, partialArg: string) => {
     const { lastArg, secondLastArg } = parseCompletionArgs(partialArg);
+    const queryKeys = ['devInstanceName', 'devInstanceId', 'creator'];
     
     // If the previous argument was --queryKey, suggest enum values
     if (secondLastArg === '--queryKey') {
-      const queryKeys = ['devInstanceName', 'devInstanceId', 'creator'];
       return queryKeys.filter(key => key.startsWith(lastArg));
+    }
+    
+    // If lastArg itself is --queryKey, show enum values
+    if (lastArg === '--queryKey') {
+      return queryKeys;
     }
     
     // Otherwise suggest option names
@@ -793,11 +798,16 @@ const queueListCommand: SlashCommand = {
   },
   completion: async (_context: CommandContext, partialArg: string) => {
     const { lastArg, secondLastArg } = parseCompletionArgs(partialArg);
+    const keywordTypes = ['queueName', 'queueId'];
     
     // If the previous argument was --keywordType, suggest enum values
     if (secondLastArg === '--keywordType') {
-      const keywordTypes = ['queueName', 'queueId'];
       return keywordTypes.filter(type => type.startsWith(lastArg));
+    }
+    
+    // If lastArg itself is --keywordType, show enum values
+    if (lastArg === '--keywordType') {
+      return keywordTypes;
     }
     
     // Otherwise suggest option names
@@ -1095,20 +1105,25 @@ const jobListCommand: SlashCommand = {
   },
   completion: async (_context: CommandContext, partialArg: string) => {
     const { lastArg, secondLastArg } = parseCompletionArgs(partialArg);
+    const keywordTypes = ['name', 'queueName'];
+    const orderByFields = ['createdAt', 'finishedAt'];
+    const orderValues = ['asc', 'desc'];
     
     // If the previous argument was a parameter flag expecting enum values, suggest those values
     if (secondLastArg === '--keywordType') {
-      const keywordTypes = ['name', 'queueName'];
       return keywordTypes.filter(type => type.startsWith(lastArg));
     }
     if (secondLastArg === '--orderBy') {
-      const orderByFields = ['createdAt', 'finishedAt'];
       return orderByFields.filter(field => field.startsWith(lastArg));
     }
     if (secondLastArg === '--order') {
-      const orderValues = ['asc', 'desc'];
       return orderValues.filter(val => val.startsWith(lastArg));
     }
+    
+    // If lastArg itself is a parameter flag, show enum values
+    if (lastArg === '--keywordType') return keywordTypes;
+    if (lastArg === '--orderBy') return orderByFields;
+    if (lastArg === '--order') return orderValues;
     
     // Otherwise suggest option names
     const options = [
@@ -1425,6 +1440,21 @@ const poolListCommand: SlashCommand = {
       return orderValues.filter(val => val.startsWith(lastArg));
     }
     
+    // If lastArg itself is a parameter flag that expects enum values, show those values
+    // This handles the case when user types "/aihc pool list -t" (without space after -t)
+    if (lastArg === '--resourcePoolType' || lastArg === '-t') {
+      return poolTypes;
+    }
+    if (lastArg === '--keywordType') {
+      return keywordTypes;
+    }
+    if (lastArg === '--orderBy') {
+      return orderByFields;
+    }
+    if (lastArg === '--order') {
+      return orderValues;
+    }
+    
     // Otherwise suggest option names (parameter flags)
     const options = [
       '--resourcePoolType', '-t',
@@ -1658,11 +1688,16 @@ const serviceListCommand: SlashCommand = {
   },
   completion: async (_context: CommandContext, partialArg: string) => {
     const { lastArg, secondLastArg } = parseCompletionArgs(partialArg);
+    const orderValues = ['asc', 'desc'];
     
     // If the previous argument was --order, suggest enum values
     if (secondLastArg === '--order') {
-      const orderValues = ['asc', 'desc'];
       return orderValues.filter(val => val.startsWith(lastArg));
+    }
+    
+    // If lastArg itself is --order, show enum values
+    if (lastArg === '--order') {
+      return orderValues;
     }
     
     // Otherwise suggest option names
@@ -1802,16 +1837,20 @@ const datasetListCommand: SlashCommand = {
   },
   completion: async (_context: CommandContext, partialArg: string) => {
     const { lastArg, secondLastArg } = parseCompletionArgs(partialArg);
+    const storageTypes = ['BOS', 'PFS'];
+    const importFormats = ['FILE', 'FOLDER'];
     
     // If the previous argument was a parameter flag expecting enum values, suggest those values
     if (secondLastArg === '--storageType') {
-      const storageTypes = ['BOS', 'PFS'];
       return storageTypes.filter(type => type.startsWith(lastArg));
     }
     if (secondLastArg === '--importFormat') {
-      const importFormats = ['FILE', 'FOLDER'];
       return importFormats.filter(format => format.startsWith(lastArg));
     }
+    
+    // If lastArg itself is a parameter flag, show enum values
+    if (lastArg === '--storageType') return storageTypes;
+    if (lastArg === '--importFormat') return importFormats;
     
     // Otherwise suggest option names
     const options = [
