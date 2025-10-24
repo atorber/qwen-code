@@ -121,6 +121,7 @@ export class AIHCOpenAICompatibleProvider implements OpenAICompatibleProvider {
       timeout,
       maxRetries,
       defaultHeaders: this.buildHeaders(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       fetch: customFetch as any, // Use custom fetch with BCE signature
     });
   }

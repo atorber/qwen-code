@@ -32,11 +32,13 @@ export const useBaiduModelSelection = (config: Config) => {
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config]);
 
   const handleModelSelect = useCallback((modelId: string) => {
     setSelectedModel(modelId);
     // 百度云认证现在使用OpenAI内容生成器，不需要特殊的模型设置
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config]);
 
   // 组件挂载时加载模型列表

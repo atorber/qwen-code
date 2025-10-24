@@ -41,7 +41,7 @@ async function main() {
     sourcesContent: false,
     platform: 'node',
     outfile: 'dist/extension.cjs',
-    external: ['vscode'],
+    external: ['vscode', '@atorber/baiducloud-sdk'],
     logLevel: 'silent',
     plugins: [
       /* add to the end of plugins array */
@@ -51,8 +51,6 @@ async function main() {
     // 解决 @atorber/baiducloud-sdk 的 package.json 解析问题
     resolveExtensions: ['.ts', '.js', '.json'],
     mainFields: ['main', 'module'],
-    // 将百度云 SDK 标记为外部依赖，避免打包问题
-    external: ['vscode', '@atorber/baiducloud-sdk'],
   });
   if (watch) {
     await ctx.watch();

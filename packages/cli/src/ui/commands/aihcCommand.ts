@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * @license
  * Copyright 2025 Qwen
@@ -11,6 +12,21 @@ import {
   CommandKind,
 } from './types.js';
 import { bceSdk } from '@qwen-code/qwen-code-core';
+import type {
+  DescribeDatasetsResponse,
+  DescribeModelsResponse,
+  DescribeDevInstancesResponse,
+  DescribeServicesResponse,
+  DescribeResourcePoolsResponse,
+  Dataset,
+  Model,
+  DevInstance,
+  ServiceBriefInfo,
+  ResourcePoolSpec,
+  QueueItem,
+  JobItem,
+  AcceleratorCard,
+} from '../../types/aihc-api.js';
 
 const COLOR_CYAN = '\u001b[36m';
 const RESET_COLOR = '\u001b[0m';
@@ -70,6 +86,9 @@ const getDatasetList = async (
     if (storageInstances) params['storageInstances'] = storageInstances;
     if (importFormat) params['importFormat'] = importFormat;
 
+    // Debug: log request parameters
+    console.log('🔍 Request params:', JSON.stringify(params, null, 2));
+
     // Make the request using BCE SDK
     const data = await bceSdk(params, { method: 'GET' }, {
       getBaiduCloudConfig: () => ({
@@ -101,7 +120,7 @@ const getDatasetList = async (
     }
 
     // Use responseData for the rest
-    const datasets = responseData;
+    const datasets = responseData as DescribeDatasetsResponse;
 
     // Format and display datasets
     let message = `✅ Datasets retrieved successfully!\n   Total count: ${datasets.totalCount || 0}\n\n`;
@@ -121,7 +140,7 @@ const getDatasetList = async (
     message += '│ ID                │ Name                                        │ Storage │ Instance              │ Format │ Owner               │ Permission │ Version │ Created              │ Updated              │\n';
     message += '├────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤\n';
 
-    datasets.datasets.forEach((dataset: any) => {
+    datasets.datasets.forEach((dataset: Dataset) => {
       const id = (dataset.id || '').padEnd(18);
       
       // Truncate name if too long and add ellipsis
@@ -237,7 +256,7 @@ const getModelList = async (
     }
 
     // Use responseData for the rest
-    const models = responseData;
+    const models = responseData as DescribeModelsResponse;
 
     // Format and display models
     let message = `✅ Models retrieved successfully!\n   Total count: ${models.totalCount || 0}\n\n`;
@@ -257,7 +276,7 @@ const getModelList = async (
     message += '│ ID                │ Name                                        │ Format          │ Source        │ Owner               │ Visibility     │ Version │ Created              │ Updated              │\n';
     message += '├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤\n';
 
-    models.models.forEach((model: any) => {
+    models.models.forEach((model: Model) => {
       const id = (model.id || '').padEnd(18);
       
       // Truncate name if too long and add ellipsis
@@ -339,6 +358,8 @@ const modelListCommand: SlashCommand = {
             keyword = nextArg;
             i++; // Skip next argument
           }
+          break;
+        default:
           break;
       }
     }
@@ -432,7 +453,7 @@ const getDevList = async (
     }
 
     // Use responseData for the rest
-    const devs = responseData;
+    const devs = responseData as DescribeDevInstancesResponse;
 
     // Format and display dev instances
     let message = `✅ Dev instances retrieved successfully!\n   Total count: ${devs.totalCount || 0}\n\n`;
@@ -446,52 +467,48 @@ const getDevList = async (
       };
     }
 
-    // Format and display dev instances
-    message += '📊 Dev Instance List:\n';
-    message += '┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐\n';
-    message += '│ ID                │ Name                                        │ Status │ Queue               │ Pool ID           │ Creator             │ CPU │ Mem(GB) │ GPU │ Created              │ Updated              │\n';
-    message += '├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤\n';
+    // Format and display dev instances (dual-row format without borders)
+    message += '📊 Dev Instance List:\n\n';
+    message += `${'Name/ID'.padEnd(61)} ${'Pool/Queue'.padEnd(35)} ${'Status'.padEnd(11)} ${'Creator'.padEnd(16)} ${'Created'.padEnd(19)} ${'Updated'.padEnd(19)}\n`;
+    message += '─'.repeat(165) + '\n';
 
-    devs.devInstances.forEach((dev: any) => {
-      const id = (dev.id || '').padEnd(18);
-      
-      // Truncate name if too long and add ellipsis
-      const fullName = dev.name || '';
-      const maxNameLength = 40;
-      const name = fullName.length > maxNameLength 
-        ? (fullName.substring(0, maxNameLength - 3) + '...').padEnd(maxNameLength)
-        : fullName.padEnd(maxNameLength);
-      
-      // Status mapping
+    devs.devInstances.forEach((dev: DevInstance) => {
+      // Complete status mapping according to API documentation
       const statusMap: Record<number, string> = {
-        0: 'Creating',
-        1: 'Starting',
-        2: 'Running',
-        3: 'Stopping',
-        4: 'Stopped',
-        5: 'Deleting',
-        6: 'Deleted',
-        7: 'Failed',
+        0: 'Creating',    // 创建中
+        1: 'Queuing',     // 排队中
+        2: 'Deploying',   // 部署中
+        3: 'Running',     // 运行中
+        4: 'Stopping',    // 实例停止中
+        5: 'Stopped',     // 实例停止
+        6: 'Starting',    // 实例开启中
+        7: 'Started',     // 实例开启
+        10: 'Imaging',    // 镜像制作中
+        11: 'Deleting',   // 删除中
+        18: 'Failed',     // 失败
+        19: 'Exception',  // 异常
+        20: 'Deleted',    // 已删除
       };
       const statusNum = dev.status || 0;
-      const status = (statusMap[statusNum] || statusNum.toString()).padEnd(6);
+      const status = (statusMap[statusNum] || `Status${statusNum}`).padEnd(11);
       
-      const queueName = (dev.queueName || '').padEnd(19);
-      const poolId = (dev.resourcePoolId || '').padEnd(17);
-      const creator = (dev.creator || '').padEnd(19);
-      const cpus = (dev.resources?.cpus?.toString() || '0').padEnd(3);
-      const memory = (dev.resources?.memory?.toString() || '0').padEnd(7);
-      const gpus = (dev.resources?.acceleratorCount?.toString() || '0').padEnd(3);
+      const creator = (dev.creator || '').padEnd(16);
       const createdAt = dev.createdAt ? new Date(dev.createdAt * 1000).toLocaleString() : '';
       const updatedAt = dev.updatedAt ? new Date(dev.updatedAt * 1000).toLocaleString() : '';
       
-      message += `│ ${id} │ ${name} │ ${status} │ ${queueName} │ ${poolId} │ ${creator} │ ${cpus} │ ${memory} │ ${gpus} │ ${createdAt.padEnd(19)} │ ${updatedAt.padEnd(19)} │\n`;
+      // First row: Name, Pool, Status, Creator, Created, Updated
+      const name = (dev.name || '').padEnd(61);
+      const pool = (dev.resourcePoolId || 'serverless').padEnd(35);
+      message += `${name} ${pool} ${status} ${creator} ${createdAt.padEnd(19)} ${updatedAt.padEnd(19)}\n`;
+      
+      // Second row: ID, Queue, empty other columns
+      const id = (dev.id || '').padEnd(61);
+      const queue = (dev.queueName || '-').padEnd(35);
+      message += `${id} ${queue} ${' '.repeat(11)} ${' '.repeat(16)} ${' '.repeat(19)} ${' '.repeat(19)}\n\n`;
     });
 
-    message += '└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘\n';
-
     // Show pagination info if applicable
-    if (devs.totalCount > pageSize) {
+    if (devs.totalCount && devs.totalCount > pageSize) {
       const totalPages = Math.ceil(devs.totalCount / pageSize);
       message += `\n📄 Page ${pageNumber} of ${totalPages} (${devs.totalCount} total dev instances)\n`;
       message += `   Use /aihc dev list --pageNumber <number> to navigate through pages\n`;
@@ -584,6 +601,8 @@ const devListCommand: SlashCommand = {
             i++; // Skip next argument
           }
           break;
+        default:
+          break;
       }
     }
 
@@ -666,7 +685,7 @@ const getQueueList = async (
 
     const queryParams: Record<string, string> = {
       action: 'DescribeQueues',
-      resourcePoolId: resourcePoolId,
+      resourcePoolId,
     };
     if (keywordType) queryParams['keywordType'] = keywordType;
     if (keyword) queryParams['keyword'] = keyword;
@@ -723,7 +742,7 @@ const getQueueList = async (
     message += '│ Queue ID                  │ Queue Name                                  │ Type      │ Opened │ Reclaimable │ CPU(cores) │ Mem(GB) │ GPUs │ Created              │ Updated              │\n';
     message += '├────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤\n';
 
-    queues.queues.forEach((queue: any) => {
+    queues.queues.forEach((queue: QueueItem) => {
       const queueId = (queue.queueId || '').padEnd(25);
       const fullName = queue.queueName || '';
       const maxDisplayWidth = 40;
@@ -752,9 +771,13 @@ const getQueueList = async (
       
       let totalGPUs = 0;
       if (queue.allocated?.acceleratorCardList) {
-        queue.allocated.acceleratorCardList.forEach((acc: any) => totalGPUs += parseFloat(acc.acceleratorCount || 0));
+        queue.allocated.acceleratorCardList.forEach((acc: AcceleratorCard) => {
+          totalGPUs += parseFloat(String(acc.acceleratorCount || 0));
+        });
       } else if (queue.capability?.acceleratorCardList) {
-        queue.capability.acceleratorCardList.forEach((acc: any) => totalGPUs += parseFloat(acc.acceleratorCount || 0));
+        queue.capability.acceleratorCardList.forEach((acc: AcceleratorCard) => {
+          totalGPUs += parseFloat(String(acc.acceleratorCount || 0));
+        });
       }
       const gpus = totalGPUs.toString().padEnd(4);
       const createdAt = queue.createdAt ? new Date(queue.createdAt).toLocaleString() : '';
@@ -803,6 +826,8 @@ const queueListCommand: SlashCommand = {
         case '--pageSize': case '-s': if (nextArg && !isNaN(Number(nextArg))) { pageSize = Number(nextArg); i++; } break;
         case '--keywordType': if (nextArg && (nextArg === 'queueName' || nextArg === 'queueId')) { keywordType = nextArg as 'queueName' | 'queueId'; i++; } break;
         case '--keyword': case '-k': if (nextArg) { keyword = nextArg; i++; } break;
+        default:
+          break;
       }
     }
 
@@ -844,7 +869,7 @@ const queueCommand: SlashCommand = {
   description: 'Manage AIHC queues',
   kind: CommandKind.BUILT_IN,
   subCommands: [queueListCommand],
-  action: async (context: CommandContext, args: string) => ({
+  action: async (_context: CommandContext, _args: string) => ({
     type: 'message',
     messageType: 'info',
     content: `AIHC Queue Commands:\n\n` +
@@ -899,7 +924,7 @@ const getJobList = async (
     // Prepare query parameters (for URL)
     const queryParams: Record<string, string> = {
       action: 'DescribeJobs',
-      resourcePoolId: resourcePoolId,
+      resourcePoolId,
     };
     if (queueID) {
       queryParams['queueID'] = queueID;
@@ -907,10 +932,10 @@ const getJobList = async (
 
     // Prepare body parameters (for POST body)
     const bodyParams: Record<string, any> = {
-      pageNumber: pageNumber,
-      pageSize: pageSize,
-      orderBy: orderBy,
-      order: order,
+      pageNumber,
+      pageSize,
+      orderBy,
+      order,
     };
     if (queue) {
       bodyParams['queue'] = queue;
@@ -979,7 +1004,7 @@ const getJobList = async (
     message += '│ Job ID                    │ Name                                        │ Status      │ Type      │ Priority │ Replicas │ Queue               │ Created              │ Finished             │\n';
     message += '├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤\n';
 
-    jobs.jobs.forEach((job: any) => {
+    jobs.jobs.forEach((job: JobItem) => {
       const jobId = (job.jobId || '').padEnd(25);
       
       // Truncate name if too long and add ellipsis
@@ -1113,6 +1138,8 @@ const jobListCommand: SlashCommand = {
             i++; // Skip next argument
           }
           break;
+        default:
+          break;
       }
     }
 
@@ -1188,7 +1215,7 @@ const jobCommand: SlashCommand = {
   description: 'Manage AIHC training jobs',
   kind: CommandKind.BUILT_IN,
   subCommands: [jobListCommand],
-  action: async (context: CommandContext, args: string) => ({
+  action: async (_context: CommandContext, _args: string) => ({
     type: 'message',
     messageType: 'info',
     content: `AIHC Training Job Commands:\n\n` +
@@ -1245,12 +1272,12 @@ const getPoolList = async (
     // Prepare request parameters
     const params: Record<string, string> = {
       action: 'DescribeResourcePools',
-      resourcePoolType: resourcePoolType,
+      resourcePoolType,
       pageNumber: pageNumber.toString(),
       pageSize: pageSize.toString(),
-      keywordType: keywordType,
-      orderBy: orderBy,
-      order: order,
+      keywordType,
+      orderBy,
+      order,
     };
     if (keyword) {
       params['keyword'] = keyword;
@@ -1287,7 +1314,7 @@ const getPoolList = async (
     }
 
     // Use responseData for the rest
-    const pools = responseData;
+    const pools = responseData as DescribeResourcePoolsResponse;
 
     // Format and display resource pools
     let message = `✅ Resource pools retrieved successfully!\n   Total count: ${pools.totalCount || 0}\n\n`;
@@ -1307,7 +1334,7 @@ const getPoolList = async (
     message += '│ ID                        │ Name                                        │ Type      │ Phase    │ Nodes │ Created              │ Updated              │ Creator              │\n';
     message += '├────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤\n';
 
-    pools.resourcePools.forEach((pool: any) => {
+    pools.resourcePools.forEach((pool: ResourcePoolSpec) => {
       const id = (pool.resourcePoolId || '').padEnd(24);
       
       // Calculate display width (CJK characters count as 2, others as 1)
@@ -1453,6 +1480,8 @@ const poolListCommand: SlashCommand = {
             i++; // Skip next argument
           }
           break;
+        default:
+          break;
       }
     }
 
@@ -1532,7 +1561,7 @@ const poolCommand: SlashCommand = {
   description: 'Manage AIHC resource pools',
   kind: CommandKind.BUILT_IN,
   subCommands: [poolListCommand],
-  action: async (context: CommandContext, args: string) => ({
+  action: async (_context: CommandContext, _args: string) => ({
     type: 'message',
     messageType: 'info',
     content: `AIHC Resource Pool Commands:\n\n` +
@@ -1620,7 +1649,7 @@ const getServiceList = async (
     }
 
     // Use responseData for the rest
-    const services = responseData;
+    const services = responseData as DescribeServicesResponse;
 
     // Format and display services
     let message = `✅ Services retrieved successfully!\n   Total count: ${services.totalCount || 0}\n\n`;
@@ -1636,42 +1665,39 @@ const getServiceList = async (
 
     // Format and display services
     message += '📊 Service List:\n';
-    message += '┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐\n';
-    message += '│ ID                        │ Name                                        │ Network      │ Public │ Queue               │ Pool ID           │ CPU │ Mem(GB) │ GPU │ GPU Type          │ Created              │ Updated              │\n';
-    message += '├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤\n';
+    message += '┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐\n';
+    message += '│ ID                   │ Name                                 │ Status  │ Pool/Queue                    │ Creator          │ Created              │ Updated              │\n';
+    message += '├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤\n';
 
-    services.services.forEach((service: any) => {
-      const id = (service.id || '').padEnd(24);
+    services.services.forEach((service: ServiceBriefInfo) => {
+      const id = (service.id || '').padEnd(20);
       
       // Truncate name if too long and add ellipsis
       const fullName = service.name || '';
-      const maxNameLength = 40;
+      const maxNameLength = 36;
       const name = fullName.length > maxNameLength 
         ? (fullName.substring(0, maxNameLength - 3) + '...').padEnd(maxNameLength)
         : fullName.padEnd(maxNameLength);
       
-      const networkType = (service.networkType || '').padEnd(12);
-      const publicAccess = (service.publicAccess ? 'Yes' : 'No').padEnd(6);
-      const queueName = (service.queueName || '').padEnd(19);
-      const poolId = (service.resourcePoolId || '').padEnd(17);
-      const cpus = (service.resourceSpec?.cpus?.toString() || '0').padEnd(3);
-      const memory = (service.resourceSpec?.memory?.toString() || '0').padEnd(7);
-      const gpus = (service.resourceSpec?.acceleratorCount?.toString() || '0').padEnd(3);
+      // Status: use network type or 'Active'
+      const status = (service.networkType || 'Active').padEnd(7);
       
-      // Truncate GPU type if too long
-      const fullGpuType = service.resourceSpec?.acceleratorType || '';
-      const maxGpuTypeLength = 17;
-      const gpuType = fullGpuType.length > maxGpuTypeLength
-        ? (fullGpuType.substring(0, maxGpuTypeLength - 3) + '...').padEnd(maxGpuTypeLength)
-        : fullGpuType.padEnd(maxGpuTypeLength);
+      // Combine pool and queue into one column (format: poolId/queue)
+      const poolQueue = service.resourcePoolId && service.queueName
+        ? `${service.resourcePoolId}/${service.queueName}`
+        : service.resourcePoolId || service.queueName || '-';
+      const poolQueuePadded = poolQueue.length > 29
+        ? (poolQueue.substring(0, 26) + '...').padEnd(29)
+        : poolQueue.padEnd(29);
       
+      const creator = (service.creator || '-').padEnd(16);
       const createdAt = service.createdAt ? new Date(service.createdAt * 1000).toLocaleString() : '';
       const updatedAt = service.updatedAt ? new Date(service.updatedAt * 1000).toLocaleString() : '';
       
-      message += `│ ${id} │ ${name} │ ${networkType} │ ${publicAccess} │ ${queueName} │ ${poolId} │ ${cpus} │ ${memory} │ ${gpus} │ ${gpuType} │ ${createdAt.padEnd(19)} │ ${updatedAt.padEnd(19)} │\n`;
+      message += `│ ${id} │ ${name} │ ${status} │ ${poolQueuePadded} │ ${creator} │ ${createdAt.padEnd(19)} │ ${updatedAt.padEnd(19)} │\n`;
     });
 
-    message += '└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘\n';
+    message += '└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘\n';
 
     // Show pagination info if applicable
     if (services.totalCount > pageSize) {
@@ -1739,6 +1765,8 @@ const serviceListCommand: SlashCommand = {
             i++; // Skip next argument
           }
           break;
+        default:
+          break;
       }
     }
 
@@ -1786,7 +1814,7 @@ const serviceCommand: SlashCommand = {
   description: 'Manage AIHC services',
   kind: CommandKind.BUILT_IN,
   subCommands: [serviceListCommand],
-  action: async (context: CommandContext, args: string) => ({
+  action: async (_context: CommandContext, _args: string) => ({
     type: 'message',
     messageType: 'info',
     content: `AIHC Service Commands:\n\n` +
@@ -1805,7 +1833,7 @@ const devCommand: SlashCommand = {
   description: 'Manage AIHC development instances',
   kind: CommandKind.BUILT_IN,
   subCommands: [devListCommand],
-  action: async (context: CommandContext, args: string) => ({
+  action: async (_context: CommandContext, _args: string) => ({
     type: 'message',
     messageType: 'info',
     content: `AIHC Dev Instance Commands:\n\n` +
@@ -1828,7 +1856,7 @@ const modelCommand: SlashCommand = {
   description: 'Manage AIHC models',
   kind: CommandKind.BUILT_IN,
   subCommands: [modelListCommand],
-  action: async (context: CommandContext, args: string) => ({
+  action: async (_context: CommandContext, _args: string) => ({
     type: 'message',
     messageType: 'info',
     content: `AIHC Model Commands:\n\n` +
@@ -1900,6 +1928,8 @@ const datasetListCommand: SlashCommand = {
             i++; // Skip next argument
           }
           break;
+        default:
+          break;
       }
     }
 
@@ -1954,7 +1984,7 @@ const datasetCommand: SlashCommand = {
   description: 'Manage AIHC datasets',
   kind: CommandKind.BUILT_IN,
   subCommands: [datasetListCommand],
-  action: async (context: CommandContext, args: string) => 
+  action: async (_context: CommandContext, _args: string) => 
     // If no subcommand, show help
      ({
       type: 'message',
@@ -1978,7 +2008,7 @@ export const aihcCommand: SlashCommand = {
   description: 'AIHC (AI High Computing) platform commands',
   kind: CommandKind.BUILT_IN,
   subCommands: [datasetCommand, modelCommand, devCommand, serviceCommand, poolCommand, jobCommand, queueCommand],
-  action: async (context: CommandContext, args: string) => ({
+  action: async (_context: CommandContext, _args: string) => ({
     type: 'message',
     messageType: 'info',
     content: `AIHC Commands:\n\n` +

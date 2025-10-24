@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BceBaseClient } from '@atorber/baiducloud-sdk';
+/* eslint-disable no-restricted-syntax */
+// Use createRequire to load CommonJS version of the SDK to avoid ESM issues
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const { BceBaseClient } = require('@atorber/baiducloud-sdk');
 import { Config } from '../config/config.js';
 
 export interface BceConfig {
@@ -29,6 +33,14 @@ export async function bceSdk(query: any, req: any, config: Config) {
       'Content-Type': 'application/json',
       version: 'v2',
     };
+
+    // Debug: log request details
+    console.log('📤 BCE SDK Request:', {
+      action: query.action,
+      method: req.method || 'GET',
+      params: params,
+      headers: headers,
+    });
 
     const actions = {
       pool: [
