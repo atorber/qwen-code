@@ -8,6 +8,7 @@
 // File for 'qwen aihc queue list' command
 import type { CommandModule, Argv, ArgumentsCamelCase } from 'yargs';
 import { bceSdk } from '@qwen-code/qwen-code-core';
+import { truncateAndPad } from '../../../utils/textWidth.js';
 
 interface QueueListArgs {
   resourcePoolId?: string;
@@ -172,7 +173,7 @@ export const listCommand: CommandModule = {
         const resources = `CPU:${cpuCores} Mem:${memoryGi}GB GPU:${totalGPUs}`;
         
         // First row: Name, Type, Status, Resources, Created, Updated
-        const name = (queue.queueName || '').padEnd(50);
+        const name = truncateAndPad(queue.queueName || '', 50);
         const queueType = (queue.queueType || '').padEnd(15);
         console.log(`${name} ${queueType} ${status.padEnd(20)} ${resources.padEnd(35)} ${createdAt.padEnd(19)} ${updatedAt.padEnd(19)}`);
         

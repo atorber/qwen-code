@@ -8,6 +8,7 @@
 // File for 'qwen aihc service list' command
 import type { CommandModule, Argv, ArgumentsCamelCase } from 'yargs';
 import { bceSdk } from '@qwen-code/qwen-code-core';
+import { truncateAndPad } from '../../../utils/textWidth.js';
 
 interface ServiceListArgs {
   pageNumber?: number;
@@ -131,7 +132,7 @@ export const listCommand: CommandModule = {
         const resources = `CPU:${cpus} Mem:${memory}GB GPU:${gpus}${gpuType ? ` (${gpuType})` : ''}`;
         
         // First row: Name, Queue, Network, Public, Resources, Created, Updated
-        const name = (service.name || '').padEnd(50);
+        const name = truncateAndPad(service.name || '', 50);
         const queueName = (service.queueName || '').padEnd(30);
         const networkType = (service.networkType || '').padEnd(15);
         const publicAccess = (service.publicAccess ? 'Yes' : 'No').padEnd(8);

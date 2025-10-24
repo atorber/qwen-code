@@ -27,6 +27,7 @@ import type {
   JobItem,
   AcceleratorCard,
 } from '../../types/aihc-api.js';
+import { truncateAndPad } from '../../utils/textWidth.js';
 
 const COLOR_CYAN = '\u001b[36m';
 const RESET_COLOR = '\u001b[0m';
@@ -139,11 +140,7 @@ const getDatasetList = async (
 
     datasets.datasets.forEach((dataset: Dataset) => {
       // Row 1: Name, StorageType, Format, Owner, Permission, Version, Created, Updated
-      const fullName = dataset.name || '';
-      const maxNameLength = 61;
-      const name = fullName.length > maxNameLength 
-        ? (fullName.substring(0, maxNameLength - 3) + '...').padEnd(maxNameLength)
-        : fullName.padEnd(maxNameLength);
+      const name = truncateAndPad(dataset.name || '', 61);
 
       const storageType = (dataset.storageType || '').padEnd(35);
       const format = (dataset.importFormat || '').padEnd(10);
@@ -276,11 +273,7 @@ const getModelList = async (
 
     models.models.forEach((model: Model) => {
       // Row 1: Name, Format, Owner, Visibility, Version, Created, Updated
-      const fullName = model.name || '';
-      const maxNameLength = 61;
-      const name = fullName.length > maxNameLength 
-        ? (fullName.substring(0, maxNameLength - 3) + '...').padEnd(maxNameLength)
-        : fullName.padEnd(maxNameLength);
+      const name = truncateAndPad(model.name || '', 61);
 
       const format = (model.modelFormat || '').padEnd(35);
       const owner = (model.ownerName || '').padEnd(16);
@@ -496,7 +489,8 @@ const getDevList = async (
       const updatedAt = dev.updatedAt ? new Date(dev.updatedAt * 1000).toLocaleString() : '';
       
       // First row: Name, Pool, Status, Creator, Created, Updated
-      const name = (dev.name || '').padEnd(61);
+      const name = truncateAndPad(dev.name || '', 61);
+      
       const pool = (dev.resourcePoolId || 'serverless').padEnd(35);
       message += `${name} ${pool} ${status} ${creator} ${createdAt.padEnd(19)} ${updatedAt.padEnd(19)}\n`;
       
@@ -752,7 +746,7 @@ const getQueueList = async (
       const resources = `CPU:${cpuCores} Mem:${memoryGi}GB GPU:${totalGPUs}`;
       
       // First row: Name, Type, Status, Resources, Created, Updated
-      const name = (queue.queueName || '').padEnd(50);
+      const name = truncateAndPad(queue.queueName || '', 50);
       const queueType = (queue.queueType || '').padEnd(15);
       message += `${name} ${queueType} ${status.padEnd(20)} ${resources.padEnd(35)} ${createdAt.padEnd(19)} ${updatedAt.padEnd(19)}\n`;
       
@@ -979,11 +973,7 @@ const getJobList = async (
 
     jobs.jobs.forEach((job: JobItem) => {
       // Row 1: Name, Queue, Status (on odd row), Priority, Replicas, Created, Finished
-      const fullName = job.name || '';
-      const maxNameLength = 61;
-      const name = fullName.length > maxNameLength 
-        ? (fullName.substring(0, maxNameLength - 3) + '...').padEnd(maxNameLength)
-        : fullName.padEnd(maxNameLength);
+      const name = truncateAndPad(job.name || '', 61);
 
       const queueVal = (job.queueId || job.queue || '').padEnd(35);
       const statusVal = (job.status || '').padEnd(20);
@@ -1311,7 +1301,7 @@ const getPoolList = async (
       const updatedAt = pool.updatedAt ? new Date(pool.updatedAt).toLocaleString() : '';
       
       // First row: Name, Type, Phase, Nodes, Creator, Created, Updated
-      const name = (pool.name || '').padEnd(50);
+      const name = truncateAndPad(pool.name || '', 50);
       const type = (pool.type || '').padEnd(15);
       const phase = (pool.phase || '').padEnd(12);
       const nodeNum = (pool.nodeNum?.toString() || '0').padEnd(8);
@@ -1607,7 +1597,8 @@ const getServiceList = async (
       const createdAt = service.createdAt ? new Date(service.createdAt * 1000).toLocaleString() : '';
       const updatedAt = service.updatedAt ? new Date(service.updatedAt * 1000).toLocaleString() : '';
 
-      const name = (service.name || '').padEnd(61);
+      const name = truncateAndPad(service.name || '', 61);
+      
       const pool = (service.resourcePoolId || '-').padEnd(35);
       message += `${name} ${pool} ${status} ${creator} ${createdAt.padEnd(19)} ${updatedAt.padEnd(19)}\n`;
 

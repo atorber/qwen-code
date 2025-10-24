@@ -8,6 +8,7 @@
 // File for 'qwen aihc pool list' command
 import type { CommandModule, Argv, ArgumentsCamelCase } from 'yargs';
 import { bceSdk } from '@qwen-code/qwen-code-core';
+import { truncateAndPad } from '../../../utils/textWidth.js';
 
 interface PoolListArgs {
   resourcePoolType?: 'common' | 'dedicatedV2';
@@ -163,7 +164,7 @@ export const listCommand: CommandModule = {
         const updatedAt = pool.updatedAt ? new Date(pool.updatedAt).toLocaleString() : '';
         
         // First row: Name, Type, Phase, Nodes, Creator, Created, Updated
-        const name = (pool.name || '').padEnd(50);
+        const name = truncateAndPad(pool.name || '', 50);
         const type = (pool.type || '').padEnd(15);
         const phase = (pool.phase || '').padEnd(12);
         const nodeNum = (pool.nodeNum?.toString() || '0').padEnd(8);

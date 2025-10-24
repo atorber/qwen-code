@@ -8,6 +8,7 @@
 // File for 'qwen aihc job list' command
 import type { CommandModule, Argv, ArgumentsCamelCase } from 'yargs';
 import { bceSdk } from '@qwen-code/qwen-code-core';
+import { truncateAndPad } from '../../../utils/textWidth.js';
 
 interface JobListArgs {
   resourcePoolId?: string;
@@ -201,7 +202,7 @@ export const listCommand: CommandModule = {
         const finishedAt = job.finishedAt ? new Date(job.finishedAt).toLocaleString() : '';
         
         // First row: Name, Queue, Status, Type, Priority, Replicas, Created, Finished
-        const name = (job.name || '').padEnd(50);
+        const name = truncateAndPad(job.name || '', 50);
         const queueId = (job.queueId || '').padEnd(30);
         const status = (job.status || '').padEnd(15);
         const jobType = (job.jobType || '').padEnd(12);

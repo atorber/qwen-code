@@ -8,6 +8,7 @@
 // File for 'qwen aihc dataset list' command
 import type { CommandModule, Argv, ArgumentsCamelCase } from 'yargs';
 import { bceSdk } from '@qwen-code/qwen-code-core';
+import { truncateAndPad } from '../../../utils/textWidth.js';
 
 interface DatasetListArgs {
   pageNumber?: number;
@@ -140,7 +141,7 @@ export const listCommand: CommandModule = {
         const updatedAt = dataset.updatedAt ? new Date(dataset.updatedAt).toLocaleString() : '';
         
         // First row: Name, Storage, Format, Owner, Version, Created, Updated
-        const name = (dataset.name || '').padEnd(50);
+        const name = truncateAndPad(dataset.name || '', 50);
         const storage = (dataset.storageType || '').padEnd(30);
         const format = (dataset.importFormat || '').padEnd(10);
         const owner = (dataset.ownerName || '').padEnd(20);

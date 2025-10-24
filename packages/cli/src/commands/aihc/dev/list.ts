@@ -8,6 +8,7 @@
 // File for 'qwen aihc dev list' command
 import type { CommandModule, Argv, ArgumentsCamelCase } from 'yargs';
 import { bceSdk } from '@qwen-code/qwen-code-core';
+import { truncateAndPad } from '../../../utils/textWidth.js';
 
 interface DevListArgs {
   pageNumber?: number;
@@ -177,7 +178,7 @@ export const listCommand: CommandModule = {
         const updatedAt = dev.updatedAt ? new Date(dev.updatedAt * 1000).toLocaleString() : '';
         
         // First row: Name, Pool, Status, Creator, Created, Updated
-        const name = (dev.name || '').padEnd(61);
+        const name = truncateAndPad(dev.name || '', 61);
         const pool = (dev.resourcePoolId || 'serverless').padEnd(35);
         console.log(`${name} ${pool} ${status} ${creator} ${createdAt.padEnd(19)} ${updatedAt.padEnd(19)}`);
         

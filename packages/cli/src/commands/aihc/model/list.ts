@@ -8,6 +8,7 @@
 // File for 'qwen aihc model list' command
 import type { CommandModule, Argv, ArgumentsCamelCase } from 'yargs';
 import { bceSdk } from '@qwen-code/qwen-code-core';
+import { truncateAndPad } from '../../../utils/textWidth.js';
 
 interface ModelListArgs {
   pageNumber?: number;
@@ -119,7 +120,7 @@ export const listCommand: CommandModule = {
         const updatedAt = model.updatedAt ? new Date(model.updatedAt).toLocaleString() : '';
         
         // First row: Name, Format, Owner, Visibility, Version, Created, Updated
-        const name = (model.name || '').padEnd(50);
+        const name = truncateAndPad(model.name || '', 50);
         const format = (model.modelFormat || '').padEnd(25);
         const owner = (model.ownerName || '').padEnd(20);
         const visibility = (model.visibilityScope || '').padEnd(15);
