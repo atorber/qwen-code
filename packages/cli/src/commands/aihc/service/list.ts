@@ -114,44 +114,35 @@ export const listCommand: CommandModule = {
         return;
       }
 
-      // Format and display services
+      // Format and display services (dual-row format without borders)
       console.log('📊 Service List:');
-      console.log('┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐');
-      console.log('│ ID                        │ Name                                        │ Network      │ Public │ Queue               │ Pool ID           │ CPU │ Mem(GB) │ GPU │ GPU Type          │ Created              │ Updated              │');
-      console.log('├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤');
+      console.log('');
+      console.log(`${'Name/ID'.padEnd(50)} ${'Queue/Pool'.padEnd(30)} ${'Network'.padEnd(15)} ${'Public'.padEnd(8)} ${'Resources'.padEnd(25)} ${'Created'.padEnd(19)} ${'Updated'.padEnd(19)}`);
+      console.log('─'.repeat(165));
 
       services.services.forEach((service: any) => {
-        const id = (service.id || '').padEnd(24);
-        
-        // Truncate name if too long and add ellipsis
-        const fullName = service.name || '';
-        const maxNameLength = 40;
-        const name = fullName.length > maxNameLength 
-          ? (fullName.substring(0, maxNameLength - 3) + '...').padEnd(maxNameLength)
-          : fullName.padEnd(maxNameLength);
-        
-        const networkType = (service.networkType || '').padEnd(12);
-        const publicAccess = (service.publicAccess ? 'Yes' : 'No').padEnd(6);
-        const queueName = (service.queueName || '').padEnd(19);
-        const poolId = (service.resourcePoolId || '').padEnd(17);
-        const cpus = (service.resourceSpec?.cpus?.toString() || '0').padEnd(3);
-        const memory = (service.resourceSpec?.memory?.toString() || '0').padEnd(7);
-        const gpus = (service.resourceSpec?.acceleratorCount?.toString() || '0').padEnd(3);
-        
-        // Truncate GPU type if too long
-        const fullGpuType = service.resourceSpec?.acceleratorType || '';
-        const maxGpuTypeLength = 17;
-        const gpuType = fullGpuType.length > maxGpuTypeLength
-          ? (fullGpuType.substring(0, maxGpuTypeLength - 3) + '...').padEnd(maxGpuTypeLength)
-          : fullGpuType.padEnd(maxGpuTypeLength);
-        
         const createdAt = service.createdAt ? new Date(service.createdAt * 1000).toLocaleString() : '';
         const updatedAt = service.updatedAt ? new Date(service.updatedAt * 1000).toLocaleString() : '';
         
-        console.log(`│ ${id} │ ${name} │ ${networkType} │ ${publicAccess} │ ${queueName} │ ${poolId} │ ${cpus} │ ${memory} │ ${gpus} │ ${gpuType} │ ${createdAt.padEnd(19)} │ ${updatedAt.padEnd(19)} │`);
+        const cpus = service.resourceSpec?.cpus || 0;
+        const memory = service.resourceSpec?.memory || 0;
+        const gpus = service.resourceSpec?.acceleratorCount || 0;
+        const gpuType = service.resourceSpec?.acceleratorType || '';
+        const resources = `CPU:${cpus} Mem:${memory}GB GPU:${gpus}${gpuType ? ` (${gpuType})` : ''}`;
+        
+        // First row: Name, Queue, Network, Public, Resources, Created, Updated
+        const name = (service.name || '').padEnd(50);
+        const queueName = (service.queueName || '').padEnd(30);
+        const networkType = (service.networkType || '').padEnd(15);
+        const publicAccess = (service.publicAccess ? 'Yes' : 'No').padEnd(8);
+        console.log(`${name} ${queueName} ${networkType} ${publicAccess} ${resources.padEnd(25)} ${createdAt.padEnd(19)} ${updatedAt.padEnd(19)}`);
+        
+        // Second row: ID, Pool
+        const id = (service.id || '').padEnd(50);
+        const poolId = (service.resourcePoolId || '').padEnd(30);
+        console.log(`${id} ${poolId} ${' '.repeat(15)} ${' '.repeat(8)} ${' '.repeat(25)} ${' '.repeat(19)} ${' '.repeat(19)}`);
+        console.log('');
       });
-
-      console.log('└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘');
 
       // Show pagination info if applicable
       const pageSize = args.pageSize || 10;

@@ -129,39 +129,36 @@ export const listCommand: CommandModule = {
         return;
       }
 
-      // Format and display datasets
+      // Format and display datasets (dual-row format without borders)
       console.log('📊 Dataset List:');
-      console.log('┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐');
-      console.log('│ ID                │ Name                                        │ Storage │ Instance              │ Format │ Owner               │ Permission │ Version │ Created              │ Updated              │');
-      console.log('├────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤');
+      console.log('');
+      console.log(`${'Name/ID'.padEnd(50)} ${'Storage/Instance'.padEnd(30)} ${'Format'.padEnd(10)} ${'Owner'.padEnd(20)} ${'Version'.padEnd(10)} ${'Created'.padEnd(19)} ${'Updated'.padEnd(19)}`);
+      console.log('─'.repeat(165));
 
       datasets.datasets.forEach((dataset: any) => {
-        const id = (dataset.id || '').padEnd(18);
-        
-        // Truncate name if too long and add ellipsis
-        const fullName = dataset.name || '';
-        const maxNameLength = 40;
-        const name = fullName.length > maxNameLength 
-          ? (fullName.substring(0, maxNameLength - 3) + '...').padEnd(maxNameLength)
-          : fullName.padEnd(maxNameLength);
-        
-        const storage = (dataset.storageType || '').padEnd(7);
-        const instance = (dataset.storageInstance || '').padEnd(20);
-        const format = (dataset.importFormat || '').padEnd(6);
-        const owner = (dataset.ownerName || '').padEnd(19);
-        const permission = (dataset.permission || '').padEnd(9);
-        const version = (dataset.latestVersion || '').padEnd(7);
         const createdAt = dataset.createdAt ? new Date(dataset.createdAt).toLocaleString() : '';
         const updatedAt = dataset.updatedAt ? new Date(dataset.updatedAt).toLocaleString() : '';
         
-        console.log(`│ ${id} │ ${name} │ ${storage} │ ${instance} │ ${format} │ ${owner} │ ${permission} │ ${version} │ ${createdAt.padEnd(19)} │ ${updatedAt.padEnd(19)} │`);
+        // First row: Name, Storage, Format, Owner, Version, Created, Updated
+        const name = (dataset.name || '').padEnd(50);
+        const storage = (dataset.storageType || '').padEnd(30);
+        const format = (dataset.importFormat || '').padEnd(10);
+        const owner = (dataset.ownerName || '').padEnd(20);
+        const version = (dataset.latestVersion || '').padEnd(10);
+        console.log(`${name} ${storage} ${format} ${owner} ${version} ${createdAt.padEnd(19)} ${updatedAt.padEnd(19)}`);
+        
+        // Second row: ID, Instance, Permission
+        const id = (dataset.id || '').padEnd(50);
+        const instance = (dataset.storageInstance || '').padEnd(30);
+        const permission = (dataset.permission || '').padEnd(10);
+        console.log(`${id} ${instance} ${permission} ${' '.repeat(20)} ${' '.repeat(10)} ${' '.repeat(19)} ${' '.repeat(19)}`);
+        console.log('');
       });
 
-      console.log('└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘');
-
       // Show pagination info if applicable
-      if (datasets.totalCount > (args.pageSize || 10)) {
-        const totalPages = Math.ceil(datasets.totalCount / (args.pageSize || 10));
+      const pageSize = args.pageSize || 10;
+      if (datasets.totalCount > pageSize) {
+        const totalPages = Math.ceil(datasets.totalCount / pageSize);
         console.log('');
         console.log(`📄 Page ${args.pageNumber || 1} of ${totalPages} (${datasets.totalCount} total datasets)`);
         console.log(`   Use --pageNumber to navigate through pages`);

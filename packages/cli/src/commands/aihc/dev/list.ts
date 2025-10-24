@@ -146,49 +146,47 @@ export const listCommand: CommandModule = {
         return;
       }
 
-      // Format and display dev instances
+      // Format and display dev instances (dual-row format without borders)
       console.log('📊 Dev Instance List:');
-      console.log('┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐');
-      console.log('│ ID                │ Name                                        │ Status │ Queue               │ Pool ID           │ Creator             │ CPU │ Mem(GB) │ GPU │ Created              │ Updated              │');
-      console.log('├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤');
+      console.log('');
+      console.log(`${'Name/ID'.padEnd(61)} ${'Pool/Queue'.padEnd(35)} ${'Status'.padEnd(11)} ${'Creator'.padEnd(16)} ${'Created'.padEnd(19)} ${'Updated'.padEnd(19)}`);
+      console.log('─'.repeat(165));
 
       devs.devInstances.forEach((dev: any) => {
-        const id = (dev.id || '').padEnd(18);
-        
-        // Truncate name if too long and add ellipsis
-        const fullName = dev.name || '';
-        const maxNameLength = 40;
-        const name = fullName.length > maxNameLength 
-          ? (fullName.substring(0, maxNameLength - 3) + '...').padEnd(maxNameLength)
-          : fullName.padEnd(maxNameLength);
-        
-        // Status mapping
+        // Status mapping (from API documentation)
         const statusMap: Record<number, string> = {
-          0: 'Creating',
-          1: 'Starting',
-          2: 'Running',
-          3: 'Stopping',
-          4: 'Stopped',
-          5: 'Deleting',
-          6: 'Deleted',
-          7: 'Failed',
+          0: 'Creating',    // 创建中
+          1: 'Queuing',     // 排队中
+          2: 'Deploying',   // 部署中
+          3: 'Running',     // 运行中
+          4: 'Stopping',    // 实例停止中
+          5: 'Stopped',     // 实例停止
+          6: 'Starting',    // 实例开启中
+          7: 'Started',     // 实例开启
+          10: 'Imaging',    // 镜像制作中
+          11: 'Deleting',   // 删除中
+          18: 'Failed',     // 失败
+          19: 'Exception',  // 异常
+          20: 'Deleted',    // 已删除
         };
         const statusNum = dev.status || 0;
-        const status = (statusMap[statusNum] || statusNum.toString()).padEnd(6);
+        const status = (statusMap[statusNum] || `Status${statusNum}`).padEnd(11);
         
-        const queueName = (dev.queueName || '').padEnd(19);
-        const poolId = (dev.resourcePoolId || '').padEnd(17);
-        const creator = (dev.creator || '').padEnd(19);
-        const cpus = (dev.resources?.cpus?.toString() || '0').padEnd(3);
-        const memory = (dev.resources?.memory?.toString() || '0').padEnd(7);
-        const gpus = (dev.resources?.acceleratorCount?.toString() || '0').padEnd(3);
+        const creator = (dev.creator || '').padEnd(16);
         const createdAt = dev.createdAt ? new Date(dev.createdAt * 1000).toLocaleString() : '';
         const updatedAt = dev.updatedAt ? new Date(dev.updatedAt * 1000).toLocaleString() : '';
         
-        console.log(`│ ${id} │ ${name} │ ${status} │ ${queueName} │ ${poolId} │ ${creator} │ ${cpus} │ ${memory} │ ${gpus} │ ${createdAt.padEnd(19)} │ ${updatedAt.padEnd(19)} │`);
+        // First row: Name, Pool, Status, Creator, Created, Updated
+        const name = (dev.name || '').padEnd(61);
+        const pool = (dev.resourcePoolId || 'serverless').padEnd(35);
+        console.log(`${name} ${pool} ${status} ${creator} ${createdAt.padEnd(19)} ${updatedAt.padEnd(19)}`);
+        
+        // Second row: ID, Queue, empty other columns
+        const id = (dev.id || '').padEnd(61);
+        const queue = (dev.queueName || '-').padEnd(35);
+        console.log(`${id} ${queue} ${' '.repeat(11)} ${' '.repeat(16)} ${' '.repeat(19)} ${' '.repeat(19)}`);
+        console.log('');
       });
-
-      console.log('└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘');
 
       // Show pagination info if applicable
       const pageSize = args.pageSize || 10;

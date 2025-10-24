@@ -134,35 +134,36 @@ const getDatasetList = async (
       };
     }
 
-    // Format and display datasets
-    message += '📊 Dataset List:\n';
-    message += '┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐\n';
-    message += '│ ID                │ Name                                        │ Storage │ Instance              │ Format │ Owner               │ Permission │ Version │ Created              │ Updated              │\n';
-    message += '├────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤\n';
+    // Format and display datasets (Dev-style: dual-row, borderless)
+    message += '📊 Dataset List:\n\n';
+    const header = `${'Name/ID'.padEnd(61)} ${'Storage/Instance'.padEnd(35)} ${'Format'.padEnd(10)} ${'Owner'.padEnd(16)} ${'Permission'.padEnd(11)} ${'Version'.padEnd(8)} ${'Created'.padEnd(19)} ${'Updated'.padEnd(19)}`;
+    message += header + '\n';
+    message += '─'.repeat(header.length) + '\n';
 
     datasets.datasets.forEach((dataset: Dataset) => {
-      const id = (dataset.id || '').padEnd(18);
-      
-      // Truncate name if too long and add ellipsis
+      // Row 1: Name, StorageType, Format, Owner, Permission, Version, Created, Updated
       const fullName = dataset.name || '';
-      const maxNameLength = 40;
+      const maxNameLength = 61;
       const name = fullName.length > maxNameLength 
         ? (fullName.substring(0, maxNameLength - 3) + '...').padEnd(maxNameLength)
         : fullName.padEnd(maxNameLength);
-      
-      const storage = (dataset.storageType || '').padEnd(7);
-      const instance = (dataset.storageInstance || '').padEnd(20);
-      const format = (dataset.importFormat || '').padEnd(6);
-      const owner = (dataset.ownerName || '').padEnd(19);
-      const permission = (dataset.permission || '').padEnd(9);
-      const version = (dataset.latestVersion || '').padEnd(7);
-      const createdAt = dataset.createdAt ? new Date(dataset.createdAt).toLocaleString() : '';
-      const updatedAt = dataset.updatedAt ? new Date(dataset.updatedAt).toLocaleString() : '';
-      
-      message += `│ ${id} │ ${name} │ ${storage} │ ${instance} │ ${format} │ ${owner} │ ${permission} │ ${version} │ ${createdAt.padEnd(19)} │ ${updatedAt.padEnd(19)} │\n`;
-    });
 
-    message += '└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘\n';
+      const storageType = (dataset.storageType || '').padEnd(35);
+      const format = (dataset.importFormat || '').padEnd(10);
+      const owner = (dataset.ownerName || '').padEnd(16);
+      const permission = (dataset.permission || '').padEnd(11);
+      const version = (dataset.latestVersion || '').padEnd(8);
+      const createdAt = dataset.createdAt ? new Date(dataset.createdAt).toLocaleString().padEnd(19) : ''.padEnd(19);
+      const updatedAt = dataset.updatedAt ? new Date(dataset.updatedAt).toLocaleString().padEnd(19) : ''.padEnd(19);
+
+      message += `${name} ${storageType} ${format} ${owner} ${permission} ${version} ${createdAt} ${updatedAt}\n`;
+
+      // Row 2: ID, StorageInstance, blanks for remaining columns
+      const id = (dataset.id || '').padEnd(61);
+      const instance = (dataset.storageInstance || '').padEnd(35);
+
+      message += `${id} ${instance} ${' '.repeat(10)} ${' '.repeat(16)} ${' '.repeat(11)} ${' '.repeat(8)} ${' '.repeat(19)} ${' '.repeat(19)}\n\n`;
+    });
 
     // Show pagination info if applicable
     if (datasets.totalCount > pageSize) {
@@ -270,34 +271,35 @@ const getModelList = async (
       };
     }
 
-    // Format and display models
-    message += '📊 Model List:\n';
-    message += '┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐\n';
-    message += '│ ID                │ Name                                        │ Format          │ Source        │ Owner               │ Visibility     │ Version │ Created              │ Updated              │\n';
-    message += '├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤\n';
+    // Format and display models (Dev-style: dual-row, borderless)
+    message += '📊 Model List:\n\n';
+    const header = `${'Name/ID'.padEnd(61)} ${'Format/Source'.padEnd(35)} ${'Owner'.padEnd(16)} ${'Visibility'.padEnd(12)} ${'Version'.padEnd(8)} ${'Created'.padEnd(19)} ${'Updated'.padEnd(19)}`;
+    message += header + '\n';
+    message += '─'.repeat(header.length) + '\n';
 
     models.models.forEach((model: Model) => {
-      const id = (model.id || '').padEnd(18);
-      
-      // Truncate name if too long and add ellipsis
+      // Row 1: Name, Format, Owner, Visibility, Version, Created, Updated
       const fullName = model.name || '';
-      const maxNameLength = 40;
+      const maxNameLength = 61;
       const name = fullName.length > maxNameLength 
         ? (fullName.substring(0, maxNameLength - 3) + '...').padEnd(maxNameLength)
         : fullName.padEnd(maxNameLength);
-      
-      const format = (model.modelFormat || '').padEnd(14);
-      const source = (model.initSource || '').padEnd(12);
-      const owner = (model.ownerName || '').padEnd(19);
-      const visibility = (model.visibilityScope || '').padEnd(14);
-      const version = (model.latestVersion || '').padEnd(7);
-      const createdAt = model.createdAt ? new Date(model.createdAt).toLocaleString() : '';
-      const updatedAt = model.updatedAt ? new Date(model.updatedAt).toLocaleString() : '';
-      
-      message += `│ ${id} │ ${name} │ ${format} │ ${source} │ ${owner} │ ${visibility} │ ${version} │ ${createdAt.padEnd(19)} │ ${updatedAt.padEnd(19)} │\n`;
-    });
 
-    message += '└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘\n';
+      const format = (model.modelFormat || '').padEnd(35);
+      const owner = (model.ownerName || '').padEnd(16);
+      const visibility = (model.visibilityScope || '').padEnd(12);
+      const version = (model.latestVersion || '').padEnd(8);
+      const createdAt = model.createdAt ? new Date(model.createdAt).toLocaleString().padEnd(19) : ''.padEnd(19);
+      const updatedAt = model.updatedAt ? new Date(model.updatedAt).toLocaleString().padEnd(19) : ''.padEnd(19);
+
+      message += `${name} ${format} ${owner} ${visibility} ${version} ${createdAt} ${updatedAt}\n`;
+
+      // Row 2: ID, Source, blanks for remaining columns
+      const id = (model.id || '').padEnd(61);
+      const source = (model.initSource || '').padEnd(35);
+
+      message += `${id} ${source} ${' '.repeat(16)} ${' '.repeat(12)} ${' '.repeat(8)} ${' '.repeat(19)} ${' '.repeat(19)}\n\n`;
+    });
 
     // Show pagination info if applicable
     if (models.totalCount > pageSize) {
@@ -723,52 +725,19 @@ const getQueueList = async (
       return { type: 'message', messageType: 'info', content: message };
     }
 
-    const getDisplayWidth = (str: string): number => {
-      let width = 0;
-      for (let i = 0; i < str.length; i++) {
-        const code = str.charCodeAt(i);
-        if ((code >= 0x4E00 && code <= 0x9FFF) || (code >= 0x3400 && code <= 0x4DBF) || 
-            (code >= 0xAC00 && code <= 0xD7AF) || (code >= 0xFF00 && code <= 0xFFEF)) {
-          width += 2;
-        } else {
-          width += 1;
-        }
-      }
-      return width;
-    };
-
-    message += '📊 Queue List:\n';
-    message += '┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐\n';
-    message += '│ Queue ID                  │ Queue Name                                  │ Type      │ Opened │ Reclaimable │ CPU(cores) │ Mem(GB) │ GPUs │ Created              │ Updated              │\n';
-    message += '├────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤\n';
+    // Format and display queues (dual-row format without borders)
+    message += '📊 Queue List:\n\n';
+    message += `${'Name/ID'.padEnd(50)} ${'Type'.padEnd(15)} ${'Status'.padEnd(20)} ${'Resources'.padEnd(35)} ${'Created'.padEnd(19)} ${'Updated'.padEnd(19)}\n`;
+    message += '─'.repeat(165) + '\n';
 
     queues.queues.forEach((queue: QueueItem) => {
-      const queueId = (queue.queueId || '').padEnd(25);
-      const fullName = queue.queueName || '';
-      const maxDisplayWidth = 40;
-      let name = fullName;
-      let displayWidth = getDisplayWidth(fullName);
+      const createdAt = queue.createdAt ? new Date(queue.createdAt).toLocaleString() : '';
+      const updatedAt = queue.updatedAt ? new Date(queue.updatedAt).toLocaleString() : '';
       
-      if (displayWidth > maxDisplayWidth) {
-        let truncated = '';
-        let currentWidth = 0;
-        for (let i = 0; i < fullName.length; i++) {
-          const charWidth = getDisplayWidth(fullName[i]);
-          if (currentWidth + charWidth + 3 > maxDisplayWidth) break;
-          truncated += fullName[i];
-          currentWidth += charWidth;
-        }
-        name = truncated + '...';
-        displayWidth = getDisplayWidth(name);
-      }
+      const cpuCores = queue.allocated?.cpuCores || queue.capability?.cpuCores || 0;
+      const memoryGi = queue.allocated?.memoryGi || queue.capability?.memoryGi || 0;
       
-      name = name + ' '.repeat(Math.max(0, maxDisplayWidth - displayWidth));
-      const queueType = (queue.queueType || '').padEnd(9);
-      const opened = (queue.opened ? 'Yes' : 'No').padEnd(6);
-      const reclaimable = (queue.reclaimable ? 'Yes' : 'No').padEnd(11);
-      const cpuCores = (queue.allocated?.cpuCores?.toString() || queue.capability?.cpuCores?.toString() || '0').padEnd(10);
-      const memoryGi = (queue.allocated?.memoryGi?.toString() || queue.capability?.memoryGi?.toString() || '0').padEnd(7);
-      
+      // Count total GPUs from acceleratorCardList
       let totalGPUs = 0;
       if (queue.allocated?.acceleratorCardList) {
         queue.allocated.acceleratorCardList.forEach((acc: AcceleratorCard) => {
@@ -779,14 +748,21 @@ const getQueueList = async (
           totalGPUs += parseFloat(String(acc.acceleratorCount || 0));
         });
       }
-      const gpus = totalGPUs.toString().padEnd(4);
-      const createdAt = queue.createdAt ? new Date(queue.createdAt).toLocaleString() : '';
-      const updatedAt = queue.updatedAt ? new Date(queue.updatedAt).toLocaleString() : '';
       
-      message += `│ ${queueId} │ ${name} │ ${queueType} │ ${opened} │ ${reclaimable} │ ${cpuCores} │ ${memoryGi} │ ${gpus} │ ${createdAt.padEnd(19)} │ ${updatedAt.padEnd(19)} │\n`;
+      const opened = queue.opened ? 'Opened' : 'Closed';
+      const reclaimable = queue.reclaimable ? 'Reclaimable' : 'Non-reclaimable';
+      const status = `${opened}, ${reclaimable}`;
+      const resources = `CPU:${cpuCores} Mem:${memoryGi}GB GPU:${totalGPUs}`;
+      
+      // First row: Name, Type, Status, Resources, Created, Updated
+      const name = (queue.queueName || '').padEnd(50);
+      const queueType = (queue.queueType || '').padEnd(15);
+      message += `${name} ${queueType} ${status.padEnd(20)} ${resources.padEnd(35)} ${createdAt.padEnd(19)} ${updatedAt.padEnd(19)}\n`;
+      
+      // Second row: Queue ID
+      const queueId = (queue.queueId || '').padEnd(50);
+      message += `${queueId} ${' '.repeat(15)} ${' '.repeat(20)} ${' '.repeat(35)} ${' '.repeat(19)} ${' '.repeat(19)}\n\n`;
     });
-
-    message += '└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘\n';
 
     if (queues.totalCount > pageSize) {
       const totalPages = Math.ceil(queues.totalCount / pageSize);
@@ -998,34 +974,34 @@ const getJobList = async (
       };
     }
 
-    // Format and display training jobs
-    message += '📊 Training Job List:\n';
-    message += '┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐\n';
-    message += '│ Job ID                    │ Name                                        │ Status      │ Type      │ Priority │ Replicas │ Queue               │ Created              │ Finished             │\n';
-    message += '├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤\n';
+    // Format and display training jobs (Dev-style: dual-row, borderless)
+    message += '📊 Training Job List:\n\n';
+    const header = `${'Name/ID'.padEnd(61)} ${'Queue'.padEnd(35)} ${'Type/Status'.padEnd(20)} ${'Priority'.padEnd(8)} ${'Replicas'.padEnd(8)} ${'Created'.padEnd(19)} ${'Finished'.padEnd(19)}`;
+    message += header + '\n';
+    message += '─'.repeat(header.length) + '\n';
 
     jobs.jobs.forEach((job: JobItem) => {
-      const jobId = (job.jobId || '').padEnd(25);
-      
-      // Truncate name if too long and add ellipsis
+      // Row 1: Name, Queue, Status (on odd row), Priority, Replicas, Created, Finished
       const fullName = job.name || '';
-      const maxNameLength = 40;
+      const maxNameLength = 61;
       const name = fullName.length > maxNameLength 
         ? (fullName.substring(0, maxNameLength - 3) + '...').padEnd(maxNameLength)
         : fullName.padEnd(maxNameLength);
-      
-      const status = (job.status || '').padEnd(11);
-      const jobType = (job.jobType || '').padEnd(9);
+
+      const queueVal = (job.queueId || job.queue || '').padEnd(35);
+      const statusVal = (job.status || '').padEnd(20);
       const priority = (job.priority || '').padEnd(8);
       const replicas = (job.jobSpec?.replicas?.toString() || '0').padEnd(8);
-      const queueId = (job.queueId || '').padEnd(19);
-      const createdAt = job.createdAt ? new Date(job.createdAt).toLocaleString() : '';
-      const finishedAt = job.finishedAt ? new Date(job.finishedAt).toLocaleString() : '';
-      
-      message += `│ ${jobId} │ ${name} │ ${status} │ ${jobType} │ ${priority} │ ${replicas} │ ${queueId} │ ${createdAt.padEnd(19)} │ ${finishedAt.padEnd(19)} │\n`;
-    });
+      const createdAt = job.createdAt ? new Date(job.createdAt).toLocaleString().padEnd(19) : ''.padEnd(19);
+      const finishedAt = job.finishedAt ? new Date(job.finishedAt).toLocaleString().padEnd(19) : ''.padEnd(19);
 
-    message += '└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘\n';
+      message += `${name} ${queueVal} ${statusVal} ${priority} ${replicas} ${createdAt} ${finishedAt}\n`;
+
+      // Row 2: Job ID, Type (on even row), blanks for remaining columns
+      const jobId = ((job.jobId || job.jobid || '')).padEnd(61);
+      const jobType = (job.jobType || '').padEnd(20);
+      message += `${jobId} ${' '.repeat(35)} ${jobType} ${' '.repeat(8)} ${' '.repeat(8)} ${' '.repeat(19)} ${' '.repeat(19)}\n\n`;
+    });
 
     // Show pagination info if applicable
     if (jobs.totalCount > pageSize) {
@@ -1328,68 +1304,27 @@ const getPoolList = async (
       };
     }
 
-    // Format and display resource pools
-    message += '📊 Resource Pool List:\n';
-    message += '┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐\n';
-    message += '│ ID                        │ Name                                        │ Type      │ Phase    │ Nodes │ Created              │ Updated              │ Creator              │\n';
-    message += '├────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤\n';
+    // Format and display resource pools (dual-row format without borders)
+    message += '📊 Resource Pool List:\n\n';
+    message += `${'Name/ID'.padEnd(50)} ${'Type'.padEnd(15)} ${'Phase'.padEnd(12)} ${'Nodes'.padEnd(8)} ${'Creator'.padEnd(20)} ${'Created'.padEnd(19)} ${'Updated'.padEnd(19)}\n`;
+    message += '─'.repeat(165) + '\n';
 
     pools.resourcePools.forEach((pool: ResourcePoolSpec) => {
-      const id = (pool.resourcePoolId || '').padEnd(24);
-      
-      // Calculate display width (CJK characters count as 2, others as 1)
-      const getDisplayWidth = (str: string): number => {
-        let width = 0;
-        for (let i = 0; i < str.length; i++) {
-          const code = str.charCodeAt(i);
-          // CJK Unified Ideographs and other wide characters
-          if ((code >= 0x4E00 && code <= 0x9FFF) ||  // CJK Unified Ideographs
-              (code >= 0x3400 && code <= 0x4DBF) ||  // CJK Extension A
-              (code >= 0xAC00 && code <= 0xD7AF) ||  // Hangul Syllables
-              (code >= 0xFF00 && code <= 0xFFEF)) {  // Fullwidth Forms
-            width += 2;
-          } else {
-            width += 1;
-          }
-        }
-        return width;
-      };
-      
-      // Truncate name and pad to fixed display width
-      const fullName = pool.name || '';
-      const maxDisplayWidth = 40;
-      let name = fullName;
-      let displayWidth = getDisplayWidth(fullName);
-      
-      if (displayWidth > maxDisplayWidth) {
-        // Truncate to fit with ellipsis
-        let truncated = '';
-        let currentWidth = 0;
-        for (let i = 0; i < fullName.length; i++) {
-          const charWidth = getDisplayWidth(fullName[i]);
-          if (currentWidth + charWidth + 3 > maxDisplayWidth) break; // Reserve 3 for '...'
-          truncated += fullName[i];
-          currentWidth += charWidth;
-        }
-        name = truncated + '...';
-        displayWidth = getDisplayWidth(name);
-      }
-      
-      // Pad with spaces to reach target width
-      const spacesToAdd = maxDisplayWidth - displayWidth;
-      name = name + ' '.repeat(Math.max(0, spacesToAdd));
-      
-      const type = (pool.type || '').padEnd(9);
-      const phase = (pool.phase || '').padEnd(8);
-      const nodeNum = (pool.nodeNum?.toString() || '0').padEnd(5);
       const createdAt = pool.createdAt ? new Date(pool.createdAt).toLocaleString() : '';
       const updatedAt = pool.updatedAt ? new Date(pool.updatedAt).toLocaleString() : '';
-      const createdBy = (pool.createdBy || '').padEnd(19);
       
-      message += `│ ${id} │ ${name} │ ${type} │ ${phase} │ ${nodeNum} │ ${createdAt.padEnd(19)} │ ${updatedAt.padEnd(19)} │ ${createdBy} │\n`;
+      // First row: Name, Type, Phase, Nodes, Creator, Created, Updated
+      const name = (pool.name || '').padEnd(50);
+      const type = (pool.type || '').padEnd(15);
+      const phase = (pool.phase || '').padEnd(12);
+      const nodeNum = (pool.nodeNum?.toString() || '0').padEnd(8);
+      const createdBy = (pool.createdBy || '').padEnd(20);
+      message += `${name} ${type} ${phase} ${nodeNum} ${createdBy} ${createdAt.padEnd(19)} ${updatedAt.padEnd(19)}\n`;
+      
+      // Second row: Pool ID
+      const id = (pool.resourcePoolId || '').padEnd(50);
+      message += `${id} ${' '.repeat(15)} ${' '.repeat(12)} ${' '.repeat(8)} ${' '.repeat(20)} ${' '.repeat(19)} ${' '.repeat(19)}\n\n`;
     });
-
-    message += '└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘\n';
 
     // Show pagination info if applicable
     if (pools.totalCount > pageSize) {
@@ -1663,41 +1598,26 @@ const getServiceList = async (
       };
     }
 
-    // Format and display services
-    message += '📊 Service List:\n';
-    message += '┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐\n';
-    message += '│ ID                   │ Name                                 │ Status  │ Pool/Queue                    │ Creator          │ Created              │ Updated              │\n';
-    message += '├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤\n';
+    // Format and display services (dual-row format without borders)
+    message += '📊 Service List:\n\n';
+    message += `${'Name/ID'.padEnd(61)} ${'Pool/Queue'.padEnd(35)} ${'Type/Status'.padEnd(11)} ${'Creator'.padEnd(16)} ${'Created'.padEnd(19)} ${'Updated'.padEnd(19)}\n`;
+    message += '─'.repeat(165) + '\n';
 
     services.services.forEach((service: ServiceBriefInfo) => {
-      const id = (service.id || '').padEnd(20);
-      
-      // Truncate name if too long and add ellipsis
-      const fullName = service.name || '';
-      const maxNameLength = 36;
-      const name = fullName.length > maxNameLength 
-        ? (fullName.substring(0, maxNameLength - 3) + '...').padEnd(maxNameLength)
-        : fullName.padEnd(maxNameLength);
-      
-      // Status: use network type or 'Active'
-      const status = (service.networkType || 'Active').padEnd(7);
-      
-      // Combine pool and queue into one column (format: poolId/queue)
-      const poolQueue = service.resourcePoolId && service.queueName
-        ? `${service.resourcePoolId}/${service.queueName}`
-        : service.resourcePoolId || service.queueName || '-';
-      const poolQueuePadded = poolQueue.length > 29
-        ? (poolQueue.substring(0, 26) + '...').padEnd(29)
-        : poolQueue.padEnd(29);
-      
+      const status = (service.networkType || (service.publicAccess ? 'Public' : 'Private') || 'Active').padEnd(11);
+      const typeStr = (service.workloadType || '-').padEnd(11);
       const creator = (service.creator || '-').padEnd(16);
       const createdAt = service.createdAt ? new Date(service.createdAt * 1000).toLocaleString() : '';
       const updatedAt = service.updatedAt ? new Date(service.updatedAt * 1000).toLocaleString() : '';
-      
-      message += `│ ${id} │ ${name} │ ${status} │ ${poolQueuePadded} │ ${creator} │ ${createdAt.padEnd(19)} │ ${updatedAt.padEnd(19)} │\n`;
-    });
 
-    message += '└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘\n';
+      const name = (service.name || '').padEnd(61);
+      const pool = (service.resourcePoolId || '-').padEnd(35);
+      message += `${name} ${pool} ${status} ${creator} ${createdAt.padEnd(19)} ${updatedAt.padEnd(19)}\n`;
+
+      const id = (service.id || '').padEnd(61);
+      const queue = (service.queueName || '-').padEnd(35);
+      message += `${id} ${queue} ${typeStr} ${' '.repeat(16)} ${' '.repeat(19)} ${' '.repeat(19)}\n\n`;
+    });
 
     // Show pagination info if applicable
     if (services.totalCount > pageSize) {

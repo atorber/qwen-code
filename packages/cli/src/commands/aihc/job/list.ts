@@ -190,34 +190,30 @@ export const listCommand: CommandModule = {
         return;
       }
 
-      // Format and display training jobs
+      // Format and display training jobs (dual-row format without borders)
       console.log('📊 Training Job List:');
-      console.log('┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐');
-      console.log('│ Job ID                    │ Name                                        │ Status      │ Type      │ Priority │ Replicas │ Queue               │ Created              │ Finished             │');
-      console.log('├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤');
+      console.log('');
+      console.log(`${'Name/ID'.padEnd(50)} ${'Queue'.padEnd(30)} ${'Status'.padEnd(15)} ${'Type'.padEnd(12)} ${'Priority'.padEnd(10)} ${'Replicas'.padEnd(10)} ${'Created'.padEnd(19)} ${'Finished'.padEnd(19)}`);
+      console.log('─'.repeat(165));
 
       jobs.jobs.forEach((job: any) => {
-        const jobId = (job.jobId || '').padEnd(25);
-        
-        // Truncate name if too long and add ellipsis
-        const fullName = job.name || '';
-        const maxNameLength = 40;
-        const name = fullName.length > maxNameLength 
-          ? (fullName.substring(0, maxNameLength - 3) + '...').padEnd(maxNameLength)
-          : fullName.padEnd(maxNameLength);
-        
-        const status = (job.status || '').padEnd(11);
-        const jobType = (job.jobType || '').padEnd(9);
-        const priority = (job.priority || '').padEnd(8);
-        const replicas = (job.jobSpec?.replicas?.toString() || '0').padEnd(8);
-        const queueId = (job.queueId || '').padEnd(19);
         const createdAt = job.createdAt ? new Date(job.createdAt).toLocaleString() : '';
         const finishedAt = job.finishedAt ? new Date(job.finishedAt).toLocaleString() : '';
         
-        console.log(`│ ${jobId} │ ${name} │ ${status} │ ${jobType} │ ${priority} │ ${replicas} │ ${queueId} │ ${createdAt.padEnd(19)} │ ${finishedAt.padEnd(19)} │`);
+        // First row: Name, Queue, Status, Type, Priority, Replicas, Created, Finished
+        const name = (job.name || '').padEnd(50);
+        const queueId = (job.queueId || '').padEnd(30);
+        const status = (job.status || '').padEnd(15);
+        const jobType = (job.jobType || '').padEnd(12);
+        const priority = (job.priority || '').padEnd(10);
+        const replicas = (job.jobSpec?.replicas?.toString() || '0').padEnd(10);
+        console.log(`${name} ${queueId} ${status} ${jobType} ${priority} ${replicas} ${createdAt.padEnd(19)} ${finishedAt.padEnd(19)}`);
+        
+        // Second row: Job ID
+        const jobId = (job.jobId || '').padEnd(50);
+        console.log(`${jobId} ${' '.repeat(30)} ${' '.repeat(15)} ${' '.repeat(12)} ${' '.repeat(10)} ${' '.repeat(10)} ${' '.repeat(19)} ${' '.repeat(19)}`);
+        console.log('');
       });
-
-      console.log('└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘');
 
       // Show pagination info if applicable
       const pageSize = args.pageSize || 10;

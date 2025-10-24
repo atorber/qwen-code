@@ -141,60 +141,18 @@ export const listCommand: CommandModule = {
         return;
       }
 
-      // Calculate display width (CJK characters count as 2, others as 1)
-      const getDisplayWidth = (str: string): number => {
-        let width = 0;
-        for (let i = 0; i < str.length; i++) {
-          const code = str.charCodeAt(i);
-          if ((code >= 0x4E00 && code <= 0x9FFF) ||
-              (code >= 0x3400 && code <= 0x4DBF) ||
-              (code >= 0xAC00 && code <= 0xD7AF) ||
-              (code >= 0xFF00 && code <= 0xFFEF)) {
-            width += 2;
-          } else {
-            width += 1;
-          }
-        }
-        return width;
-      };
-
-      // Format and display queues
+      // Format and display queues (dual-row format without borders)
       console.log('📊 Queue List:');
-      console.log('┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐');
-      console.log('│ Queue ID                  │ Queue Name                                  │ Type      │ Opened │ Reclaimable │ CPU(cores) │ Mem(GB) │ GPUs │ Created              │ Updated              │');
-      console.log('├────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤');
+      console.log('');
+      console.log(`${'Name/ID'.padEnd(50)} ${'Type'.padEnd(15)} ${'Status'.padEnd(20)} ${'Resources'.padEnd(35)} ${'Created'.padEnd(19)} ${'Updated'.padEnd(19)}`);
+      console.log('─'.repeat(165));
 
       queues.queues.forEach((queue: any) => {
-        const queueId = (queue.queueId || '').padEnd(25);
+        const createdAt = queue.createdAt ? new Date(queue.createdAt).toLocaleString() : '';
+        const updatedAt = queue.updatedAt ? new Date(queue.updatedAt).toLocaleString() : '';
         
-        // Truncate queue name and pad to fixed display width
-        const fullName = queue.queueName || '';
-        const maxDisplayWidth = 40;
-        let name = fullName;
-        let displayWidth = getDisplayWidth(fullName);
-        
-        if (displayWidth > maxDisplayWidth) {
-          let truncated = '';
-          let currentWidth = 0;
-          for (let i = 0; i < fullName.length; i++) {
-            const charWidth = getDisplayWidth(fullName[i]);
-            if (currentWidth + charWidth + 3 > maxDisplayWidth) break;
-            truncated += fullName[i];
-            currentWidth += charWidth;
-          }
-          name = truncated + '...';
-          displayWidth = getDisplayWidth(name);
-        }
-        
-        const spacesToAdd = maxDisplayWidth - displayWidth;
-        name = name + ' '.repeat(Math.max(0, spacesToAdd));
-        
-        const queueType = (queue.queueType || '').padEnd(9);
-        const opened = (queue.opened ? 'Yes' : 'No').padEnd(6);
-        const reclaimable = (queue.reclaimable ? 'Yes' : 'No').padEnd(11);
-        
-        const cpuCores = (queue.allocated?.cpuCores?.toString() || queue.capability?.cpuCores?.toString() || '0').padEnd(10);
-        const memoryGi = (queue.allocated?.memoryGi?.toString() || queue.capability?.memoryGi?.toString() || '0').padEnd(7);
+        const cpuCores = queue.allocated?.cpuCores || queue.capability?.cpuCores || 0;
+        const memoryGi = queue.allocated?.memoryGi || queue.capability?.memoryGi || 0;
         
         // Count total GPUs from acceleratorCardList
         let totalGPUs = 0;
@@ -207,15 +165,22 @@ export const listCommand: CommandModule = {
             totalGPUs += parseFloat(acc.acceleratorCount || 0);
           });
         }
-        const gpus = totalGPUs.toString().padEnd(4);
         
-        const createdAt = queue.createdAt ? new Date(queue.createdAt).toLocaleString() : '';
-        const updatedAt = queue.updatedAt ? new Date(queue.updatedAt).toLocaleString() : '';
+        const opened = queue.opened ? 'Opened' : 'Closed';
+        const reclaimable = queue.reclaimable ? 'Reclaimable' : 'Non-reclaimable';
+        const status = `${opened}, ${reclaimable}`;
+        const resources = `CPU:${cpuCores} Mem:${memoryGi}GB GPU:${totalGPUs}`;
         
-        console.log(`│ ${queueId} │ ${name} │ ${queueType} │ ${opened} │ ${reclaimable} │ ${cpuCores} │ ${memoryGi} │ ${gpus} │ ${createdAt.padEnd(19)} │ ${updatedAt.padEnd(19)} │`);
+        // First row: Name, Type, Status, Resources, Created, Updated
+        const name = (queue.queueName || '').padEnd(50);
+        const queueType = (queue.queueType || '').padEnd(15);
+        console.log(`${name} ${queueType} ${status.padEnd(20)} ${resources.padEnd(35)} ${createdAt.padEnd(19)} ${updatedAt.padEnd(19)}`);
+        
+        // Second row: Queue ID
+        const queueId = (queue.queueId || '').padEnd(50);
+        console.log(`${queueId} ${' '.repeat(15)} ${' '.repeat(20)} ${' '.repeat(35)} ${' '.repeat(19)} ${' '.repeat(19)}`);
+        console.log('');
       });
-
-      console.log('└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘');
 
       // Show pagination info if applicable
       const pageSize = args.pageSize || 10;

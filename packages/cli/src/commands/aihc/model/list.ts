@@ -108,34 +108,30 @@ export const listCommand: CommandModule = {
         return;
       }
 
-      // Format and display models
+      // Format and display models (dual-row format without borders)
       console.log('📊 Model List:');
-      console.log('┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐');
-      console.log('│ ID                │ Name                                        │ Format          │ Source        │ Owner               │ Visibility     │ Version │ Created              │ Updated              │');
-      console.log('├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤');
+      console.log('');
+      console.log(`${'Name/ID'.padEnd(50)} ${'Format/Source'.padEnd(25)} ${'Owner'.padEnd(20)} ${'Visibility'.padEnd(15)} ${'Version'.padEnd(10)} ${'Created'.padEnd(19)} ${'Updated'.padEnd(19)}`);
+      console.log('─'.repeat(165));
 
       models.models.forEach((model: any) => {
-        const id = (model.id || '').padEnd(18);
-        
-        // Truncate name if too long and add ellipsis
-        const fullName = model.name || '';
-        const maxNameLength = 40;
-        const name = fullName.length > maxNameLength 
-          ? (fullName.substring(0, maxNameLength - 3) + '...').padEnd(maxNameLength)
-          : fullName.padEnd(maxNameLength);
-        
-        const format = (model.modelFormat || '').padEnd(14);
-        const source = (model.initSource || '').padEnd(12);
-        const owner = (model.ownerName || '').padEnd(19);
-        const visibility = (model.visibilityScope || '').padEnd(14);
-        const version = (model.latestVersion || '').padEnd(7);
         const createdAt = model.createdAt ? new Date(model.createdAt).toLocaleString() : '';
         const updatedAt = model.updatedAt ? new Date(model.updatedAt).toLocaleString() : '';
         
-        console.log(`│ ${id} │ ${name} │ ${format} │ ${source} │ ${owner} │ ${visibility} │ ${version} │ ${createdAt.padEnd(19)} │ ${updatedAt.padEnd(19)} │`);
+        // First row: Name, Format, Owner, Visibility, Version, Created, Updated
+        const name = (model.name || '').padEnd(50);
+        const format = (model.modelFormat || '').padEnd(25);
+        const owner = (model.ownerName || '').padEnd(20);
+        const visibility = (model.visibilityScope || '').padEnd(15);
+        const version = (model.latestVersion || '').padEnd(10);
+        console.log(`${name} ${format} ${owner} ${visibility} ${version} ${createdAt.padEnd(19)} ${updatedAt.padEnd(19)}`);
+        
+        // Second row: ID, Source
+        const id = (model.id || '').padEnd(50);
+        const source = (model.initSource || '').padEnd(25);
+        console.log(`${id} ${source} ${' '.repeat(20)} ${' '.repeat(15)} ${' '.repeat(10)} ${' '.repeat(19)} ${' '.repeat(19)}`);
+        console.log('');
       });
-
-      console.log('└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘');
 
       // Show pagination info if applicable
       const pageSize = args.pageSize || 10;

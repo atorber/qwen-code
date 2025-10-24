@@ -152,68 +152,29 @@ export const listCommand: CommandModule = {
         return;
       }
 
-      // Format and display resource pools
+      // Format and display resource pools (dual-row format without borders)
       console.log('📊 Resource Pool List:');
-      console.log('┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐');
-      console.log('│ ID                        │ Name                                        │ Type      │ Phase    │ Nodes │ Created              │ Updated              │ Creator              │');
-      console.log('├────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤');
+      console.log('');
+      console.log(`${'Name/ID'.padEnd(50)} ${'Type'.padEnd(15)} ${'Phase'.padEnd(12)} ${'Nodes'.padEnd(8)} ${'Creator'.padEnd(20)} ${'Created'.padEnd(19)} ${'Updated'.padEnd(19)}`);
+      console.log('─'.repeat(165));
 
       pools.resourcePools.forEach((pool: any) => {
-        const id = (pool.resourcePoolId || '').padEnd(24);
-        
-        // Calculate display width (CJK characters count as 2, others as 1)
-        const getDisplayWidth = (str: string): number => {
-          let width = 0;
-          for (let i = 0; i < str.length; i++) {
-            const code = str.charCodeAt(i);
-            // CJK Unified Ideographs and other wide characters
-            if ((code >= 0x4E00 && code <= 0x9FFF) ||  // CJK Unified Ideographs
-                (code >= 0x3400 && code <= 0x4DBF) ||  // CJK Extension A
-                (code >= 0xAC00 && code <= 0xD7AF) ||  // Hangul Syllables
-                (code >= 0xFF00 && code <= 0xFFEF)) {  // Fullwidth Forms
-              width += 2;
-            } else {
-              width += 1;
-            }
-          }
-          return width;
-        };
-        
-        // Truncate name and pad to fixed display width
-        const fullName = pool.name || '';
-        const maxDisplayWidth = 40;
-        let name = fullName;
-        let displayWidth = getDisplayWidth(fullName);
-        
-        if (displayWidth > maxDisplayWidth) {
-          // Truncate to fit with ellipsis
-          let truncated = '';
-          let currentWidth = 0;
-          for (let i = 0; i < fullName.length; i++) {
-            const charWidth = getDisplayWidth(fullName[i]);
-            if (currentWidth + charWidth + 3 > maxDisplayWidth) break; // Reserve 3 for '...'
-            truncated += fullName[i];
-            currentWidth += charWidth;
-          }
-          name = truncated + '...';
-          displayWidth = getDisplayWidth(name);
-        }
-        
-        // Pad with spaces to reach target width
-        const spacesToAdd = maxDisplayWidth - displayWidth;
-        name = name + ' '.repeat(Math.max(0, spacesToAdd));
-        
-        const type = (pool.type || '').padEnd(9);
-        const phase = (pool.phase || '').padEnd(8);
-        const nodeNum = (pool.nodeNum?.toString() || '0').padEnd(5);
         const createdAt = pool.createdAt ? new Date(pool.createdAt).toLocaleString() : '';
         const updatedAt = pool.updatedAt ? new Date(pool.updatedAt).toLocaleString() : '';
-        const createdBy = (pool.createdBy || '').padEnd(19);
         
-        console.log(`│ ${id} │ ${name} │ ${type} │ ${phase} │ ${nodeNum} │ ${createdAt.padEnd(19)} │ ${updatedAt.padEnd(19)} │ ${createdBy} │`);
+        // First row: Name, Type, Phase, Nodes, Creator, Created, Updated
+        const name = (pool.name || '').padEnd(50);
+        const type = (pool.type || '').padEnd(15);
+        const phase = (pool.phase || '').padEnd(12);
+        const nodeNum = (pool.nodeNum?.toString() || '0').padEnd(8);
+        const createdBy = (pool.createdBy || '').padEnd(20);
+        console.log(`${name} ${type} ${phase} ${nodeNum} ${createdBy} ${createdAt.padEnd(19)} ${updatedAt.padEnd(19)}`);
+        
+        // Second row: Pool ID
+        const id = (pool.resourcePoolId || '').padEnd(50);
+        console.log(`${id} ${' '.repeat(15)} ${' '.repeat(12)} ${' '.repeat(8)} ${' '.repeat(20)} ${' '.repeat(19)} ${' '.repeat(19)}`);
+        console.log('');
       });
-
-      console.log('└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘');
 
       // Show pagination info if applicable
       const pageSize = args.pageSize || 10;
