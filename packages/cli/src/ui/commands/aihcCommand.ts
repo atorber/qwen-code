@@ -593,6 +593,22 @@ const devListCommand: SlashCommand = {
     const { lastArg, secondLastArg } = parseCompletionArgs(partialArg);
     const queryKeys = ['devInstanceName', 'devInstanceId', 'creator'];
     
+    // Check if lastArg is an enum value, then suggest other parameters
+    const isEnumValue = queryKeys.includes(lastArg);
+    if (isEnumValue && !lastArg.startsWith('-')) {
+      const options = [
+        '--pageNumber', '-p',
+        '--pageSize', '-s',
+        '--onlyMyDevs', '-m',
+        '--resourcePoolId', '-r',
+        '--queueName', '-q',
+        '--status',
+        '--queryKey',
+        '--queryVal',
+      ];
+      return options;
+    }
+    
     // If the previous argument was --queryKey, suggest enum values
     if (secondLastArg === '--queryKey') {
       return queryKeys.filter(key => key.startsWith(lastArg));
@@ -799,6 +815,13 @@ const queueListCommand: SlashCommand = {
   completion: async (_context: CommandContext, partialArg: string) => {
     const { lastArg, secondLastArg } = parseCompletionArgs(partialArg);
     const keywordTypes = ['queueName', 'queueId'];
+    
+    // Check if lastArg is an enum value, then suggest other parameters
+    const isEnumValue = keywordTypes.includes(lastArg);
+    if (isEnumValue && !lastArg.startsWith('-')) {
+      const options = ['--resourcePoolId', '-r', '--pageNumber', '-p', '--pageSize', '-s', '--keywordType', '--keyword', '-k'];
+      return options;
+    }
     
     // If the previous argument was --keywordType, suggest enum values
     if (secondLastArg === '--keywordType') {
@@ -1108,6 +1131,24 @@ const jobListCommand: SlashCommand = {
     const keywordTypes = ['name', 'queueName'];
     const orderByFields = ['createdAt', 'finishedAt'];
     const orderValues = ['asc', 'desc'];
+    
+    // Check if lastArg is an enum value, then suggest other parameters
+    const isEnumValue = [...keywordTypes, ...orderByFields, ...orderValues].includes(lastArg);
+    if (isEnumValue && !lastArg.startsWith('-')) {
+      const options = [
+        '--resourcePoolId', '-r',
+        '--queueID',
+        '--queue', '-q',
+        '--status',
+        '--keywordType',
+        '--keyword', '-k',
+        '--orderBy',
+        '--order',
+        '--pageNumber', '-p',
+        '--pageSize', '-s',
+      ];
+      return options;
+    }
     
     // If the previous argument was a parameter flag expecting enum values, suggest those values
     if (secondLastArg === '--keywordType') {
@@ -1426,6 +1467,23 @@ const poolListCommand: SlashCommand = {
     const orderByFields = ['resourcePoolName', 'resourcePoolId', 'createdAt'];
     const orderValues = ['ASC', 'DESC'];
     
+    // Check if lastArg is an enum value (already completed parameter value)
+    const isEnumValue = [...poolTypes, ...keywordTypes, ...orderByFields, ...orderValues].includes(lastArg);
+    
+    // If lastArg is an enum value, suggest other available parameters
+    if (isEnumValue && !lastArg.startsWith('-')) {
+      const options = [
+        '--resourcePoolType', '-t',
+        '--pageNumber', '-p',
+        '--pageSize', '-s',
+        '--keywordType',
+        '--keyword', '-k',
+        '--orderBy',
+        '--order',
+      ];
+      return options;
+    }
+    
     // If the previous argument was a parameter flag expecting enum values, suggest those values
     if (secondLastArg === '--resourcePoolType' || secondLastArg === '-t') {
       return poolTypes.filter(type => type.startsWith(lastArg));
@@ -1690,6 +1748,18 @@ const serviceListCommand: SlashCommand = {
     const { lastArg, secondLastArg } = parseCompletionArgs(partialArg);
     const orderValues = ['asc', 'desc'];
     
+    // Check if lastArg is an enum value, then suggest other parameters
+    const isEnumValue = orderValues.includes(lastArg);
+    if (isEnumValue && !lastArg.startsWith('-')) {
+      const options = [
+        '--pageNumber', '-p',
+        '--pageSize', '-s',
+        '--orderBy',
+        '--order',
+      ];
+      return options;
+    }
+    
     // If the previous argument was --order, suggest enum values
     if (secondLastArg === '--order') {
       return orderValues.filter(val => val.startsWith(lastArg));
@@ -1839,6 +1909,20 @@ const datasetListCommand: SlashCommand = {
     const { lastArg, secondLastArg } = parseCompletionArgs(partialArg);
     const storageTypes = ['BOS', 'PFS'];
     const importFormats = ['FILE', 'FOLDER'];
+    
+    // Check if lastArg is an enum value, then suggest other parameters
+    const isEnumValue = [...storageTypes, ...importFormats].includes(lastArg);
+    if (isEnumValue && !lastArg.startsWith('-')) {
+      const options = [
+        '--pageNumber', '-p',
+        '--pageSize', '-s',
+        '--keyword', '-k',
+        '--storageType',
+        '--storageInstances',
+        '--importFormat',
+      ];
+      return options;
+    }
     
     // If the previous argument was a parameter flag expecting enum values, suggest those values
     if (secondLastArg === '--storageType') {
