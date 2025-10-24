@@ -18,6 +18,7 @@ import { Colors } from '../colors.js';
 import { useKeypress } from '../hooks/useKeypress.js';
 import { OpenAIKeyPrompt } from './OpenAIKeyPrompt.js';
 import { BaiduCloudAuthForm } from './BaiduCloudAuthForm.js';
+import { AIHCAuthForm } from './AIHCAuthForm.js';
 import { ServiceSelectionForm } from './ServiceSelectionForm.js';
 import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
 
@@ -57,6 +58,9 @@ export function AuthDialog({
   const [serviceError, setServiceError] = useState<string | null>(null);
   const [, setSelectedService] = useState<unknown>(null);
   const [isBaiduCloudAuthenticated, setIsBaiduCloudAuthenticated] = useState(false);
+  const [showAIHCAuthForm, setShowAIHCAuthForm] = useState(false);
+  const [aihcLoading, setAihcLoading] = useState(false);
+  const [aihcError, setAihcError] = useState<string | null>(null);
   const items = [
     { label: 'Qwen OAuth', value: AuthType.QWEN_OAUTH },
     { label: 'OpenAI', value: AuthType.USE_OPENAI },
@@ -66,6 +70,7 @@ export function AuthDialog({
         'Baidu Cloud', 
       value: AuthType.BAIDU_CLOUD 
     },
+    { label: 'AIHC', value: AuthType.AIHC },
   ];
 
   const initialAuthIndex = Math.max(
@@ -91,6 +96,22 @@ export function AuthDialog({
   );
 
   const handleAuthSelect = async (authMethod: AuthType) => {
+    // 特殊处理AIHC认证
+    if (authMethod === AuthType.AIHC) {
+      // 检查是否已经设置了AIHC环境变量
+      if (!process.env['AIHC_AK'] || !process.env['AIHC_SK'] || !process.env['AIHC_ENDPOINT']) {
+        console.log('🔧 AIHC环境变量未设置，显示认证表单');
+        setShowAIHCAuthForm(true);
+        setErrorMessage(null);
+        return;
+      }
+      
+      // 如果已经设置了环境变量，直接使用
+      console.log('✅ AIHC环境变量已设置，直接使用');
+      onSelect(AuthType.AIHC, SettingScope.User);
+      return;
+    }
+    
     // 特殊处理百度云认证 - 优先检查认证状态
     if (authMethod === AuthType.BAIDU_CLOUD) {
       try {
@@ -250,6 +271,62 @@ export function AuthDialog({
   const handleBaiduCloudAuthCancel = () => {
     setShowBaiduCloudAuthForm(false);
     setErrorMessage('Baidu Cloud AK/SK is required to use Baidu Cloud authentication.');
+  };
+
+  const handleAIHCAuthSubmit = async (ak: string, sk: string, endpoint: string) => {
+    setAihcLoading(true);
+    setAihcError(null);
+    
+    try {
+      // 设置环境变量
+      process.env['AIHC_AK'] = ak;
+      process.env['AIHC_SK'] = sk;
+      process.env['AIHC_ENDPOINT'] = endpoint;
+      
+      // 保存到 .env 文件
+      try {
+        const { saveToEnvFile } = await import('../../utils/envFile.js');
+        saveToEnvFile({
+          AIHC_AK: ak,
+          AIHC_SK: sk,
+          AIHC_ENDPOINT: endpoint,
+        });
+        console.log('✅ AIHC认证信息已保存到 .env 文件');
+      } catch (envError) {
+        console.warn('⚠️  保存到 .env 文件失败，仅保存到当前会话:', envError);
+      }
+      
+      console.log('✅ AIHC认证信息已保存到环境变量');
+      console.log('🔍 环境变量验证:', {
+        AIHC_AK: process.env['AIHC_AK'] ? '已设置' : '未设置',
+        AIHC_SK: process.env['AIHC_SK'] ? '已设置' : '未设置',
+        AIHC_ENDPOINT: process.env['AIHC_ENDPOINT'],
+      });
+      
+      setAihcLoading(false);
+      setAihcError(null);
+      setShowAIHCAuthForm(false);
+      
+      // 认证成功后直接完成，不需要选择服务
+      console.log('🚀 调用 onSelect，AuthType:', AuthType.AIHC);
+      onSelect(AuthType.AIHC, SettingScope.User);
+    } catch (error) {
+      setAihcLoading(false);
+      
+      console.error('AIHC authentication error details:', error);
+      
+      let errorMessage = 'Authentication failed';
+      if (error instanceof Error) {
+        errorMessage = `Authentication failed: ${error.message}`;
+      }
+      
+      setAihcError(errorMessage);
+    }
+  };
+
+  const handleAIHCAuthCancel = () => {
+    setShowAIHCAuthForm(false);
+    setErrorMessage('AIHC AK/SK is required to use AIHC authentication.');
   };
 
   // 加载可用的服务列表
@@ -510,8 +587,8 @@ export function AuthDialog({
       // 添加调试日志，查看按键事件
       console.log('🔍 按键事件:', key);
       
-      // 如果显示了OpenAI密钥提示或百度云认证表单，只处理这些表单相关的按键
-      if (showOpenAIKeyPrompt || showBaiduCloudAuthForm) {
+      // 如果显示了OpenAI密钥提示、百度云认证表单或AIHC认证表单，只处理这些表单相关的按键
+      if (showOpenAIKeyPrompt || showBaiduCloudAuthForm || showAIHCAuthForm) {
         console.log('📝 处理表单相关按键');
         return;
       }
@@ -595,6 +672,17 @@ export function AuthDialog({
         onCancel={handleBaiduCloudAuthCancel}
         loading={baiduCloudLoading}
         error={baiduCloudError}
+      />
+    );
+  }
+
+  if (showAIHCAuthForm) {
+    return (
+      <AIHCAuthForm
+        onSubmit={handleAIHCAuthSubmit}
+        onCancel={handleAIHCAuthCancel}
+        loading={aihcLoading}
+        error={aihcError}
       />
     );
   }

@@ -60,6 +60,14 @@ export const validateAuthMethod = (authMethod: string): string | null => {
     return null;
   }
 
+  // 新增AIHC认证验证逻辑
+  if (authMethod === AuthType.AIHC) {
+    if (!process.env['AIHC_AK'] || !process.env['AIHC_SK'] || !process.env['AIHC_ENDPOINT']) {
+      return 'AIHC_AK, AIHC_SK, and AIHC_ENDPOINT environment variables are required for AIHC authentication.';
+    }
+    return null;
+  }
+
   return 'Invalid auth method selected.';
 };
 
@@ -73,4 +81,10 @@ export const setOpenAIBaseUrl = (baseUrl: string): void => {
 
 export const setOpenAIModel = (model: string): void => {
   process.env['OPENAI_MODEL'] = model;
+};
+
+export const setAIHCCredentials = (ak: string, sk: string, endpoint: string): void => {
+  process.env['AIHC_AK'] = ak;
+  process.env['AIHC_SK'] = sk;
+  process.env['AIHC_ENDPOINT'] = endpoint;
 };

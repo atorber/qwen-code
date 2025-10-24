@@ -435,6 +435,15 @@ export class Config {
   }
 
   async refreshAuth(authMethod: AuthType) {
+    console.log('🔍 refreshAuth 被调用，authMethod:', authMethod);
+    console.log('🔍 环境变量状态:', {
+      AIHC_AK: process.env['AIHC_AK'] ? '已设置' : '未设置',
+      AIHC_SK: process.env['AIHC_SK'] ? '已设置' : '未设置',
+      AIHC_ENDPOINT: process.env['AIHC_ENDPOINT'] ? '已设置' : '未设置',
+      BAIDU_CLOUD_AK: process.env['BAIDU_CLOUD_AK'] ? '已设置' : '未设置',
+      BAIDU_CLOUD_SK: process.env['BAIDU_CLOUD_SK'] ? '已设置' : '未设置',
+    });
+    
     // Save the current conversation history before creating a new client
     let existingHistory: Content[] = [];
     if (this.geminiClient && this.geminiClient.isInitialized()) {
@@ -442,16 +451,18 @@ export class Config {
     }
 
     // Create new content generator config
+    console.log('🔍 调用 createContentGeneratorConfig，authMethod:', authMethod);
     const newContentGeneratorConfig = createContentGeneratorConfig(
       this,
       authMethod,
     );
+    console.log('✅ createContentGeneratorConfig 完成，返回的 authType:', newContentGeneratorConfig.authType);
 
     // Create and initialize new client in local variable first
     const newGeminiClient = new GeminiClient(this);
     
-    // For Baidu Cloud auth, we need to use OpenAI content generator instead of the default initialization
-    if (authMethod === AuthType.BAIDU_CLOUD) {
+    // For Baidu Cloud and AIHC auth, we need to use OpenAI content generator instead of the default initialization
+    if (authMethod === AuthType.BAIDU_CLOUD || authMethod === AuthType.AIHC) {
       // Create content generator using OpenAI content generator
       const contentGenerator = await createContentGenerator(
         newContentGeneratorConfig,

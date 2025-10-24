@@ -50,6 +50,7 @@ export enum AuthType {
   USE_OPENAI = 'openai',
   QWEN_OAUTH = 'qwen-oauth',
   BAIDU_CLOUD = 'baidu-cloud',
+  AIHC = 'aihc',
 }
 
 export type ContentGeneratorConfig = {
@@ -95,6 +96,11 @@ export function createContentGeneratorConfig(
   // baidu cloud auth
   const baiduCloudAk = process.env['BAIDU_CLOUD_AK'] || undefined;
   const baiduCloudSk = process.env['BAIDU_CLOUD_SK'] || undefined;
+
+  // aihc auth
+  const aihcAk = process.env['AIHC_AK'] || undefined;
+  const aihcSk = process.env['AIHC_SK'] || undefined;
+  const aihcEndpoint = process.env['AIHC_ENDPOINT'] || undefined;
 
   // Use runtime model from config if available; otherwise, fall back to parameter or default
   const effectiveModel = config.getModel() || DEFAULT_GEMINI_MODEL;
@@ -190,6 +196,34 @@ export function createContentGeneratorConfig(
     return contentGeneratorConfig;
   }
 
+  // 添加AIHC认证支持
+  if (authType === AuthType.AIHC) {
+    console.log('🔍 AIHC认证检测到，authType:', authType);
+    console.log('🔍 环境变量检查:', {
+      aihcAk: aihcAk ? '已设置' : '未设置',
+      aihcSk: aihcSk ? '已设置' : '未设置',
+      aihcEndpoint: aihcEndpoint ? '已设置' : '未设置',
+    });
+    
+    if (!aihcAk || !aihcSk || !aihcEndpoint) {
+      throw new Error('AIHC_AK, AIHC_SK, and AIHC_ENDPOINT environment variables are required for AIHC authentication');
+    }
+    
+    // AIHC认证使用简单的配置方式，不需要选择服务
+    contentGeneratorConfig.apiKey = aihcAk;
+    contentGeneratorConfig.baseUrl = aihcEndpoint;
+    contentGeneratorConfig.model = process.env['AIHC_MODEL'] || DEFAULT_QWEN_MODEL;
+    
+    console.log('✅ AIHC配置已设置:', {
+      apiKey: contentGeneratorConfig.apiKey ? '已设置' : '未设置',
+      baseUrl: contentGeneratorConfig.baseUrl,
+      model: contentGeneratorConfig.model,
+      authType: contentGeneratorConfig.authType
+    });
+
+    return contentGeneratorConfig;
+  }
+
   return contentGeneratorConfig;
 }
 
@@ -198,6 +232,12 @@ export async function createContentGenerator(
   gcConfig: Config,
   sessionId?: string,
 ): Promise<ContentGenerator> {
+  console.log('🔍 createContentGenerator 被调用');
+  console.log('   config.authType:', config.authType);
+  console.log('   config.apiKey:', config.apiKey ? '已设置' : '未设置');
+  console.log('   config.baseUrl:', config.baseUrl);
+  console.log('   config.model:', config.model);
+  
   const version = process.env['CLI_VERSION'] || process.version;
   const userAgent = `QwenCode/${version} (${process.platform}; ${process.arch})`;
   const baseHeaders: Record<string, string> = {
@@ -239,6 +279,29 @@ export async function createContentGenerator(
     } catch (error) {
       throw new Error(
         `Failed to initialize OpenAI Content Generator for Baidu Cloud: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  // AIHC认证方式：使用OpenAI内容生成器
+  if (config.authType === AuthType.AIHC) {
+    // 确保必要的认证信息存在
+    if (!config.apiKey) {
+      throw new Error('AIHC API key is required');
+    }
+
+    // 使用OpenAI内容生成器处理AIHC认证
+    try {
+      // Import OpenAIContentGenerator dynamically to avoid circular dependencies
+      const { createOpenAIContentGenerator } = await import(
+        './openaiContentGenerator/index.js'
+      );
+
+      // Always use OpenAIContentGenerator, logging is controlled by enableOpenAILogging flag
+      return createOpenAIContentGenerator(config, gcConfig);
+    } catch (error) {
+      throw new Error(
+        `Failed to initialize OpenAI Content Generator for AIHC: ${error instanceof Error ? error.message : String(error)}`
       );
     }
   }

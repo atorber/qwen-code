@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * @license
  * Copyright 2025 Google LLC
@@ -14,39 +15,31 @@ import {
 // import { createContentGenerator } from './contentGenerator.js';
 
 // Mock the QwenOAuth2Client
-vi.mock('../qwen/qwenOAuth2.js', () => {
-  return {
+vi.mock('../qwen/qwenOAuth2.js', () => ({
     getQwenOAuthClient: vi.fn().mockResolvedValue({
       getAccessToken: vi.fn().mockResolvedValue({ token: 'mock-token' }),
     }),
-  };
-});
+  }));
 
 // Mock the OpenAIContentGenerator
-vi.mock('./openaiContentGenerator/index.js', () => {
-  return {
+vi.mock('./openaiContentGenerator/index.js', () => ({
     createOpenAIContentGenerator: vi.fn().mockResolvedValue({
       generateContent: vi.fn(),
       generateContentStream: vi.fn(),
       countTokens: vi.fn(),
       embedContent: vi.fn(),
     }),
-  };
-});
+  }));
 
 // Mock the QwenContentGenerator
-vi.mock('../qwen/qwenContentGenerator.js', () => {
-  return {
-    QwenContentGenerator: vi.fn().mockImplementation(() => {
-      return {
+vi.mock('../qwen/qwenContentGenerator.js', () => ({
+    QwenContentGenerator: vi.fn().mockImplementation(() => ({
         generateContent: vi.fn(),
         generateContentStream: vi.fn(),
         countTokens: vi.fn(),
         embedContent: vi.fn(),
-      };
-    }),
-  };
-});
+      })),
+  }));
 
 describe('contentGenerator', () => {
   describe('createContentGeneratorConfig', () => {

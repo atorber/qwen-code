@@ -13,6 +13,7 @@ import { OpenAIContentGenerator } from './openaiContentGenerator.js';
 import {
   DashScopeOpenAICompatibleProvider,
   OpenRouterOpenAICompatibleProvider,
+  AIHCOpenAICompatibleProvider,
   type OpenAICompatibleProvider,
   DefaultOpenAICompatibleProvider,
 } from './provider/index.js';
@@ -24,6 +25,7 @@ export {
   type OpenAICompatibleProvider,
   DashScopeOpenAICompatibleProvider,
   OpenRouterOpenAICompatibleProvider,
+  AIHCOpenAICompatibleProvider,
 } from './provider/index.js';
 
 export { OpenAIContentConverter } from './converter.js';
@@ -52,6 +54,14 @@ export function determineProvider(
 ): OpenAICompatibleProvider {
   const config =
     contentGeneratorConfig || cliConfig.getContentGeneratorConfig();
+
+  // Check for AIHC provider
+  if (AIHCOpenAICompatibleProvider.isAIHCProvider(config)) {
+    return new AIHCOpenAICompatibleProvider(
+      contentGeneratorConfig,
+      cliConfig,
+    );
+  }
 
   // Check for DashScope provider
   if (DashScopeOpenAICompatibleProvider.isDashScopeProvider(config)) {

@@ -120,3 +120,4 @@ export {
   ServiceListResponse,
   validateBaiduCloudAuth
 } from './bce-sdk/baiduCloudAuthCache.js';
+export { BaiduCloudAuthMiddleware } from './bce-sdk/baiduCloudAuthMiddleware.js';

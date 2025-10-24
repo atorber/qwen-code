@@ -23,6 +23,7 @@ import { helpCommand } from '../ui/commands/helpCommand.js';
 import { ideCommand } from '../ui/commands/ideCommand.js';
 import { initCommand } from '../ui/commands/initCommand.js';
 import { mcpCommand } from '../ui/commands/mcpCommand.js';
+import { aihcCommand } from '../ui/commands/aihcCommand.js';
 import { memoryCommand } from '../ui/commands/memoryCommand.js';
 import { privacyCommand } from '../ui/commands/privacyCommand.js';
 import { quitCommand, quitConfirmCommand } from '../ui/commands/quitCommand.js';
@@ -70,6 +71,7 @@ export class BuiltinCommandLoader implements ICommandLoader {
       ideCommand(this.config),
       initCommand,
       mcpCommand,
+      aihcCommand,
       memoryCommand,
       privacyCommand,
       quitCommand,

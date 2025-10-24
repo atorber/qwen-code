@@ -48,3 +48,4 @@ logs/
 # GHA credentials
 gha-creds-*.json
 .qoder/*
+.docs/*
