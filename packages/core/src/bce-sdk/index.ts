@@ -38,8 +38,8 @@ export async function bceSdk(query: any, req: any, config: Config) {
     console.log('📤 BCE SDK Request:', {
       action: query.action,
       method: req.method || 'GET',
-      params: params,
-      headers: headers,
+      params,
+      headers,
     });
 
     const actions = {
@@ -71,22 +71,39 @@ export async function bceSdk(query: any, req: any, config: Config) {
         'DeleteService',
         'ModifyService',
       ],
+      dataset: [
+        'DescribeDatasets',
+        'DescribeDataset',
+        'CreateDataset',
+        'DeleteDataset',
+        'ModifyDataset',
+      ],
+      model: [
+        'DescribeModels',
+        'DescribeModel',
+        'CreateModel',
+        'DeleteModel',
+        'ModifyModel',
+      ],
+      dev: [
+        'DescribeDevInstances',
+        'DescribeDevInstance',
+        'CreateDevInstance',
+        'DeleteDevInstance',
+        'ModifyDevInstance',
+        'StartDevInstance',
+        'StopDevInstance',
+      ],
     };
 
     const action = query.action;
 
+    // 只有 Job 相关接口使用 X-API-Version: v2，其他接口都使用 version: v2
     if (actions.job.includes(action)) {
       headers['X-API-Version'] = 'v2';
       delete headers['version'];
-    } else if (actions.service.includes(action)) {
-      // 服务相关操作使用 v2 版本，根据官方文档
-      headers['X-API-Version'] = 'v2';
-      delete headers['version'];
-    } else if (actions.queue.includes(action)) {
-      // 队列相关操作使用 v2 版本，根据官方文档
-      headers['X-API-Version'] = 'v2';
-      delete headers['version'];
     }
+    // 其他接口（service、queue、pool、dataset、model、dev）都保持默认的 version: v2
 
     if (req.method === 'POST') {
       const response = await client.sendRequest(req.method, '/', {

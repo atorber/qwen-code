@@ -74,10 +74,10 @@ const getDatasetList = async (
     );
 
     // Prepare request parameters
-    const params: Record<string, string> = {
+    const params: Record<string, any> = {
       action: 'DescribeDatasets',
-      pageNumber: pageNumber.toString(),
-      pageSize: pageSize.toString(),
+      pageNumber: Number(pageNumber),
+      pageSize: Number(pageSize),
     };
 
     // Add optional parameters
@@ -85,9 +85,6 @@ const getDatasetList = async (
     if (storageType) params['storageType'] = storageType;
     if (storageInstances) params['storageInstances'] = storageInstances;
     if (importFormat) params['importFormat'] = importFormat;
-
-    // Debug: log request parameters
-    console.log('🔍 Request params:', JSON.stringify(params, null, 2));
 
     // Make the request using BCE SDK
     const data = await bceSdk(params, { method: 'GET' }, {
@@ -217,10 +214,10 @@ const getModelList = async (
     );
 
     // Prepare request parameters
-    const params: Record<string, string> = {
+    const params: Record<string, any> = {
       action: 'DescribeModels',
-      pageNumber: pageNumber.toString(),
-      pageSize: pageSize.toString(),
+      pageNumber: Number(pageNumber),
+      // pageSize: Number(pageSize),
     };
 
     // Add optional parameters
