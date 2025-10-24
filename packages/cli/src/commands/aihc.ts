@@ -8,6 +8,11 @@
 import type { CommandModule, Argv } from 'yargs';
 import { datasetCommand } from './aihc/dataset.js';
 import { modelCommand } from './aihc/model.js';
+import { devCommand } from './aihc/dev.js';
+import { serviceCommand } from './aihc/service.js';
+import { poolCommand } from './aihc/pool.js';
+import { jobCommand } from './aihc/job.js';
+import { queueCommand } from './aihc/queue.js';
 
 export const aihcCommand: CommandModule = {
   command: 'aihc',
@@ -16,6 +21,11 @@ export const aihcCommand: CommandModule = {
     yargs
       .command(datasetCommand)
       .command(modelCommand)
+      .command(devCommand)
+      .command(serviceCommand)
+      .command(poolCommand)
+      .command(jobCommand)
+      .command(queueCommand)
       .demandCommand(1, 'You need at least one command before continuing.')
       .version(false),
   handler: () => {

@@ -70,6 +70,10 @@ export async function bceSdk(query: any, req: any, config: Config) {
       // 服务相关操作使用 v2 版本，根据官方文档
       headers['X-API-Version'] = 'v2';
       delete headers['version'];
+    } else if (actions.queue.includes(action)) {
+      // 队列相关操作使用 v2 版本，根据官方文档
+      headers['X-API-Version'] = 'v2';
+      delete headers['version'];
     }
 
     if (req.method === 'POST') {
